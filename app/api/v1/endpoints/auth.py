@@ -1,0 +1,26 @@
+from fastapi import APIRouter, Depends
+from sqlmodel import Session
+
+from app.core.database import get_db
+from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse
+from app.services.auth import auth_service
+
+router = APIRouter()
+
+
+@router.post("/register", response_model=TokenResponse, status_code=201)
+def register(
+    payload: RegisterRequest,
+    db: Session = Depends(get_db),
+):
+    """Create a new account and return a JWT."""
+    return auth_service.register(db, payload)
+
+
+@router.post("/login", response_model=TokenResponse)
+def login(
+    payload: LoginRequest,
+    db: Session = Depends(get_db),
+):
+    """Authenticate and return a JWT."""
+    return auth_service.login(db, payload)
