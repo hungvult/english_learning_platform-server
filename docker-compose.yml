@@ -1,0 +1,32 @@
+version: "3.9"
+
+# ── Shared env config ──────────────────────────────────────────────────────────
+x-common-env: &common-env
+  env_file: .env
+
+services:
+
+  # ── Production ────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      target: runtime          # multi-stage: uses the lean runtime image
+    <<: *common-env
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  # ── Development (hot-reload) ──────────────────────────────────────────────────
+  dev:
+    build:
+      context: .
+      target: dev              # multi-stage: runtime + --reload CMD
+    <<: *common-env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bind-mount source so every save is reflected inside the container
+      - ./app:/app/app
+      # Persist uploaded audio across restarts
+      - ./app/static/audio:/app/app/static/audio
+    restart: "no"

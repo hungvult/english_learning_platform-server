@@ -64,3 +64,15 @@ EXPOSE 8000
 # Workers = 1 keeps connection-pool behaviour predictable with pyodbc.
 # Increase --workers or switch to gunicorn+uvicorn when scaling horizontally.
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+
+
+# ── Stage 3: development (hot-reload) ─────────────────────────────────────────
+# Run with: docker compose up dev
+# Source code is mounted from the host — changes are reflected immediately.
+FROM runtime AS dev
+
+# Switch back to root so the bind-mount is writable and uvicorn can watch files
+USER root
+
+# Uvicorn --reload uses inotify; no extra OS deps needed on Linux.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
