@@ -6,7 +6,7 @@ import uuid
 class ExerciseRead(BaseModel):
     id: uuid.UUID
     lesson_id: uuid.UUID
-    type: str
+    exercise_type_id: uuid.UUID
     question_data: Dict[str, Any] = {}
     answer_data: Dict[str, Any] = {}
 
