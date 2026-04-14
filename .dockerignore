@@ -1,0 +1,22 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Environment files (inject at runtime via docker run --env-file or compose)
+.env
+.env.*
+
+# Git
+.git/
+.gitignore
+
+# Docs
+README.md
+
+# IDE
+.vscode/
+.idea/
