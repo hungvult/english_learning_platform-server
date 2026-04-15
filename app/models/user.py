@@ -11,6 +11,7 @@ class User(SQLModel, table=True):
     username: str = Field(index=True)
     email: str = Field(unique=True, index=True)
     hashed_password: str
+    is_admin: bool = Field(default=False)
     cefr_level: Optional[str] = Field(default=None, max_length=2)
     total_xp: int = Field(default=0)
     hearts: int = Field(default=5)

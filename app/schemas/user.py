@@ -10,6 +10,7 @@ class UserRead(BaseModel):
     id: uuid.UUID
     username: str
     email: str
+    is_admin: bool
     cefr_level: Optional[str] = None
     total_xp: int
     hearts: int
