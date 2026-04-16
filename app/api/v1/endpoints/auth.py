@@ -29,3 +29,10 @@ def login(
     token = auth_service.login(db, payload)
     response.set_cookie(key="access_token", value=token.access_token, httponly=True, samesite="lax")
     return token
+
+
+@router.post("/logout")
+def logout(response: Response):
+    """Clear the authentication cookie."""
+    response.delete_cookie(key="access_token")
+    return {"message": "Successfully logged out"}
