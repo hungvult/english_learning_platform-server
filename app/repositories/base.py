@@ -17,7 +17,7 @@ class BaseRepository(Generic[ModelType]):
     def get_multi(
         self, db: Session, *, skip: int = 0, limit: int = 100
     ) -> List[ModelType]:
-        statement = select(self.model).offset(skip).limit(limit)
+        statement = select(self.model).order_by(self.model.id).offset(skip).limit(limit)
         return db.exec(statement).all()
 
     def create(self, db: Session, obj_in: dict) -> ModelType:
