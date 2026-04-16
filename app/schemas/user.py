@@ -27,4 +27,6 @@ class UserUpdate(BaseModel):
     """Fields a user can update on their own profile."""
 
     username: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
     cefr_level: Optional[str] = None
