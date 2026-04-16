@@ -4,7 +4,12 @@ from sqlmodel import Session
 from app.core.database import get_db
 from app.api.dependencies import get_current_user
 from app.models.user import User
+from app.schemas.client_progress import (
+    CourseProgressResponse,
+    UserProgressResponse,
+)
 from app.schemas.user import UserRead, UserUpdate
+from app.services.client_progress import client_progress_service
 from app.services.user import user_service
 
 router = APIRouter()
@@ -26,3 +31,21 @@ def update_current_user(
 ):
     """Update the currently authenticated user's profile."""
     return user_service.update_profile(db, current_user, payload)
+
+
+@router.get("/me/progress", response_model=UserProgressResponse)
+def read_current_user_progress(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Compatibility endpoint for frontend user progress card data."""
+    return client_progress_service.get_user_progress(db, current_user)
+
+
+@router.get("/me/course-progress", response_model=CourseProgressResponse)
+def read_current_user_course_progress(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Compatibility endpoint for frontend active lesson and progress state."""
+    return client_progress_service.get_course_progress(db, current_user)

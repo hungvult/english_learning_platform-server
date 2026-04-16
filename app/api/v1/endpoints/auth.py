@@ -7,6 +7,8 @@ from app.services.auth import auth_service
 
 router = APIRouter()
 
+from fastapi import Response
+
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
 def register(
@@ -20,7 +22,10 @@ def register(
 @router.post("/login", response_model=TokenResponse)
 def login(
     payload: LoginRequest,
+    response: Response,
     db: Session = Depends(get_db),
 ):
     """Authenticate and return a JWT."""
-    return auth_service.login(db, payload)
+    token = auth_service.login(db, payload)
+    response.set_cookie(key="access_token", value=token.access_token, httponly=True, samesite="lax")
+    return token
