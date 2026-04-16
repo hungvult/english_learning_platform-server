@@ -4,8 +4,10 @@ sqlmodel
 sqlalchemy
 pyodbc
 pydantic-settings
+pydantic[email]
 python-jose[cryptography]
 bcrypt
 alembic
 httpx
 python-multipart
+email-validator
