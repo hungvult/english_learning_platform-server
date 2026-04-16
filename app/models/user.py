@@ -1,6 +1,7 @@
 from typing import Optional, List
 from datetime import datetime, timezone
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship, AutoString
+from sqlalchemy import String
 import uuid
 
 
@@ -8,8 +9,8 @@ class User(SQLModel, table=True):
     __tablename__ = "Users"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    username: str = Field(index=True)
-    email: str = Field(unique=True, index=True)
+    username: str = Field(index=True, sa_type=String(150))
+    email: str = Field(unique=True, index=True, sa_type=String(254))
     hashed_password: str
     is_admin: bool = Field(default=False)
     cefr_level: Optional[str] = Field(default=None, max_length=2)
