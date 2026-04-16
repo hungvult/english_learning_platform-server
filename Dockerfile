@@ -19,7 +19,7 @@ RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 unixodbc-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY server/requirements.txt .
 RUN pip install --upgrade pip \
     && pip install --no-cache-dir --prefix=/install -r requirements.txt
 
@@ -51,10 +51,10 @@ RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 WORKDIR /app
 
 # Copy application source
-COPY app/ ./app/
+COPY server/app/ ./app/
 
 # Ensure the static audio directory exists and is owned by the app user
-RUN mkdir -p ./app/static/audio && chown -R appuser:appgroup /app
+RUN mkdir -p /app/app/static/audio && chown -R appuser:appgroup /app
 
 USER appuser
 
@@ -76,3 +76,19 @@ USER root
 
 # Uvicorn --reload uses inotify; no extra OS deps needed on Linux.
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+
+# ── Stage 4: seeder (one-shot) ────────────────────────────────────────────────
+# Inherits runtime image (Python packages + ODBC already installed).
+# seed.py imports server models from /app/app — already present from the COPY above.
+FROM runtime AS seeder
+
+USER root
+
+# Copy the seed script
+COPY seed_data/seed.py /seed.py
+
+# SERVER_PATH tells seed.py where to find the `app` package
+ENV SERVER_PATH=/app
+
+CMD ["python", "/seed.py"]
