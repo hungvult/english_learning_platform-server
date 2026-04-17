@@ -85,10 +85,12 @@ FROM runtime AS seeder
 
 USER root
 
-# Copy the seed script
+# Copy all seed scripts
 COPY seed_data/seed.py /seed.py
+COPY seed_data/seed_exercises.py /seed_exercises.py
 
-# SERVER_PATH tells seed.py where to find the `app` package
+# SERVER_PATH tells seed scripts where to find the `app` package
 ENV SERVER_PATH=/app
 
-CMD ["python", "/seed.py"]
+# Run base seed first, then exercise seed
+CMD ["/bin/sh", "-c", "python /seed.py && python /seed_exercises.py"]
