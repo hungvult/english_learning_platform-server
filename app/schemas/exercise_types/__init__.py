@@ -136,6 +136,7 @@ class TypeHearExercise(BaseModel):
 
 class ListenFillQuestion(BaseModel):
     instruction: str
+    text: str                    # Sentence to convert to TTS audio
     word_bank: List[WordBankItem]
 
 
