@@ -11,6 +11,7 @@ class UserRead(BaseModel):
     username: str
     email: str
     is_admin: bool
+    active_course_id: Optional[uuid.UUID] = None
     cefr_level: Optional[str] = None
     total_xp: int
     hearts: int
@@ -29,4 +30,5 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
     password: Optional[str] = None
+    active_course_id: Optional[uuid.UUID] = None
     cefr_level: Optional[str] = None

@@ -13,6 +13,7 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True, index=True, sa_type=String(254))
     hashed_password: str
     is_admin: bool = Field(default=False)
+    active_course_id: Optional[uuid.UUID] = Field(default=None, foreign_key="Courses.id")
     cefr_level: Optional[str] = Field(default=None, max_length=2)
     total_xp: int = Field(default=0)
     hearts: int = Field(default=5)

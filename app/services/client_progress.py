@@ -20,6 +20,11 @@ from app.schemas.client_progress import (
 class ClientProgressService:
     @staticmethod
     def _resolve_active_course(db: Session, user: User) -> Optional[Course]:
+        if user.active_course_id:
+            selected = db.get(Course, user.active_course_id)
+            if selected:
+                return selected
+
         courses = db.exec(select(Course)).all()
         if not courses:
             return None

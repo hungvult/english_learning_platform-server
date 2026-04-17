@@ -2,6 +2,7 @@ from typing import Optional
 from sqlmodel import Session
 import uuid
 
+from app.models.course import Course
 from app.models.user import User
 from app.schemas.user import UserUpdate
 from app.repositories.user import user_repository
@@ -32,6 +33,15 @@ class UserService:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Email already registered",
+                )
+
+        # Validate selected active course (attending course)
+        if "active_course_id" in update_data and update_data["active_course_id"] is not None:
+            selected_course = db.get(Course, update_data["active_course_id"])
+            if not selected_course:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Active course not found",
                 )
 
         return self.repository.update(db, user, update_data)
