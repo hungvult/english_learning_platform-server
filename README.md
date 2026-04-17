@@ -71,13 +71,7 @@ app/
 | GET    | `/api/v1/courses/{id}`         | No   | Course with units/lessons |
 | GET    | `/api/v1/lessons/{id}/payload` | Yes  | Full exercise payload     |
 | POST   | `/api/v1/lessons/{id}/submit`  | Yes  | Submit lesson completion  |
-| GET    | `/api/v1/exercises/{id}/audio` | No   | Audio file for exercise   |
 
 ## Default Password
 
 All seeded users use `abc123` as the default password.
-
-## Audio Files
-
-Place MP3 files in `app/static/audio/{exercise_id}.mp3`.  
-They are served at `/api/v1/exercises/{exercise_id}/audio`.
