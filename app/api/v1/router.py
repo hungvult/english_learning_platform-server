@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, users, courses, lessons, exercises
+from app.api.v1.endpoints import auth, users, courses, lessons
 from app.api.v1.endpoints.admin import (
     users as admin_users,
     courses as admin_courses,
@@ -16,7 +16,6 @@ api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
 api_router.include_router(users.router, prefix="/users", tags=["Users"])
 api_router.include_router(courses.router, prefix="/courses", tags=["Courses"])
 api_router.include_router(lessons.router, prefix="/lessons", tags=["Lessons"])
-api_router.include_router(exercises.router, prefix="/exercises", tags=["Exercises"])
 
 # ── Admin-only routes ───────────────────────────────────────────────────────
 api_router.include_router(admin_users.router,     prefix="/admin/users",     tags=["Admin — Users"])

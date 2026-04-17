@@ -8,7 +8,7 @@ from app.models.lesson import Lesson
 from app.models.exercise import Exercise, ExerciseType
 from app.models.user import User
 from app.models.user_lesson_progress import UserLessonProgress
-from app.schemas.exercise import ExerciseClient, EvaluateRequest, EvaluateResponse
+from app.schemas.exercise import ExerciseClient
 from app.schemas.lesson import LessonPayload
 from app.schemas.progress import LessonSubmission, ProgressResponse
 from app.repositories.lesson import lesson_repository
@@ -89,6 +89,7 @@ class LessonService:
                     lesson_id=ex.lesson_id,
                     type=type_name,
                     question_data=ex.question_data or {},
+                    answer_data=ex.answer_data or {},
                 )
             )
 
@@ -115,35 +116,12 @@ class LessonService:
                     lesson_id=ex.lesson_id,
                     type=type_name,
                     question_data=ex.question_data or {},
+                    answer_data=ex.answer_data or {},
                 )
             )
         return result
 
-    def evaluate_exercise(
-        self, db: Session, req: EvaluateRequest
-    ) -> EvaluateResponse:
-        """Server-side evaluation for a single exercise answer."""
-        from sqlalchemy.orm import selectinload
-        from sqlmodel import select
 
-        stmt = (
-            select(Exercise)
-            .where(Exercise.id == req.exercise_id)
-            .options(selectinload(Exercise.exercise_type))
-        )
-        exercise = db.exec(stmt).first()
-
-        if not exercise:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Exercise not found",
-            )
-
-        is_correct = _evaluate_exercise(exercise, req.user_answer)
-        return EvaluateResponse(
-            is_correct=is_correct,
-            answer_data=exercise.answer_data or {},
-        )
 
     def submit_lesson(
         self,

@@ -11,7 +11,7 @@ from app.models.lesson import Lesson
 from app.models.exercise import Exercise
 from app.models.unit import Unit
 from app.models.course import Course
-from app.schemas.exercise import ExerciseClient, EvaluateRequest, EvaluateResponse
+from app.schemas.exercise import ExerciseClient
 from app.schemas.lesson import LessonPayload
 from app.schemas.progress import LessonSubmission, ProgressResponse
 from app.services.lesson import lesson_service
@@ -121,17 +121,7 @@ def get_lesson_exercises(
     return lesson_service.get_exercises_for_lesson(db, lesson_id)
 
 
-@router.post("/exercises/evaluate", response_model=EvaluateResponse)
-def evaluate_exercise(
-    req: EvaluateRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """
-    Server-side evaluation for a single exercise answer (Spec §6.2).
-    Returns is_correct and the correct answer_data.
-    """
-    return lesson_service.evaluate_exercise(db, req)
+
 
 
 @router.post("/{lesson_id}/submit", response_model=ProgressResponse)

@@ -4,18 +4,18 @@ import uuid
 
 
 # ---------------------------------------------------------------------------
-# Client-facing: exercise WITHOUT answer_data
+# Client-facing: exercise WITH answer_data for local evaluation
 # ---------------------------------------------------------------------------
 
 class ExerciseClient(BaseModel):
     """Exercise payload sent to clients during a lesson session.
-    AnswerData is intentionally omitted — evaluation is done client-side
-    from the pre-fetched payload or server-side via /evaluate.
+    AnswerData IS included as the client evaluates exercises locally.
     """
     id: uuid.UUID
     lesson_id: uuid.UUID
     type: str                           # exercise type name
     question_data: Dict[str, Any] = {}
+    answer_data: Dict[str, Any] = {}
 
     class Config:
         from_attributes = True
@@ -35,17 +35,3 @@ class ExerciseRead(BaseModel):
 
     class Config:
         from_attributes = True
-
-
-# ---------------------------------------------------------------------------
-# Evaluate endpoint  (server-side correctness check)
-# ---------------------------------------------------------------------------
-
-class EvaluateRequest(BaseModel):
-    exercise_id: uuid.UUID
-    user_answer: Any                    # raw answer — shape varies per type
-
-
-class EvaluateResponse(BaseModel):
-    is_correct: bool
-    answer_data: Dict[str, Any]         # Reveal correct answer after check
