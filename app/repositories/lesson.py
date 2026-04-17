@@ -13,11 +13,13 @@ class LessonRepository(BaseRepository[Lesson]):
         super().__init__(Lesson)
 
     def get_with_exercises(self, db: Session, lesson_id: uuid.UUID) -> Optional[Lesson]:
-        """Eager-load all exercises for the lesson payload pre-fetch."""
+        """Eager-load exercises and their type names for the lesson pre-fetch payload."""
         statement = (
             select(Lesson)
             .where(Lesson.id == lesson_id)
-            .options(selectinload(Lesson.exercises))
+            .options(
+                selectinload(Lesson.exercises).selectinload(Exercise.exercise_type)
+            )
         )
         return db.exec(statement).first()
 

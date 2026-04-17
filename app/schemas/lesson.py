@@ -2,7 +2,7 @@ from typing import List
 from pydantic import BaseModel
 import uuid
 
-from app.schemas.exercise import ExerciseRead
+from app.schemas.exercise import ExerciseClient
 
 
 class LessonRead(BaseModel):
@@ -17,6 +17,9 @@ class LessonRead(BaseModel):
 
 
 class LessonPayload(LessonRead):
-    """Full lesson payload with all exercises for client-side pre-fetch."""
+    """Full lesson payload with all exercises for client-side pre-fetch.
+    AnswerData is included so the client can evaluate answers locally
+    (Hybrid Client/Server Validation Architecture per Specification §6).
+    """
 
-    exercises: List[ExerciseRead] = []
+    exercises: List[ExerciseClient] = []

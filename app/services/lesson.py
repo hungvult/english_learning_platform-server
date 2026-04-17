@@ -1,14 +1,18 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional
 from sqlmodel import Session
 from fastapi import HTTPException, status
 import uuid
 
 from app.models.lesson import Lesson
+from app.models.exercise import Exercise, ExerciseType
 from app.models.user import User
 from app.models.user_lesson_progress import UserLessonProgress
+from app.schemas.exercise import ExerciseClient, EvaluateRequest, EvaluateResponse
+from app.schemas.lesson import LessonPayload
 from app.schemas.progress import LessonSubmission, ProgressResponse
 from app.repositories.lesson import lesson_repository
+from app.repositories.exercise import exercise_repository
 
 
 # XP reward tiers based on accuracy percentage
@@ -20,15 +24,126 @@ XP_TIERS = [
 ]
 
 
+def _evaluate_exercise(exercise: Exercise, user_answer) -> bool:
+    """Factory-pattern evaluation. Routes by exercise_type.name."""
+    ex_type = exercise.exercise_type.name if exercise.exercise_type else ""
+    answer_data = exercise.answer_data or {}
+
+    if ex_type == "COMPLETE_CONVERSATION":
+        return str(user_answer) == str(answer_data.get("correct_option_id", ""))
+
+    elif ex_type == "ARRANGE_WORDS":
+        correct = answer_data.get("correct_sequence", [])
+        if isinstance(user_answer, list):
+            return [str(t) for t in user_answer] == [str(t) for t in correct]
+        return False
+
+    elif ex_type == "COMPLETE_TRANSLATION":
+        correct = answer_data.get("correct_words", [])
+        if isinstance(user_answer, list):
+            return [w.strip().lower() for w in user_answer] == [w.strip().lower() for w in correct]
+        return False
+
+    elif ex_type == "PICTURE_MATCH":
+        return str(user_answer) == str(answer_data.get("correct_option_id", ""))
+
+    elif ex_type == "TYPE_HEAR":
+        correct = answer_data.get("correct_transcription", "")
+        return str(user_answer).strip().lower() == correct.strip().lower()
+
+    elif ex_type == "LISTEN_FILL":
+        correct = answer_data.get("correct_sequence_ids", [])
+        if isinstance(user_answer, list):
+            return [str(i) for i in user_answer] == [str(i) for i in correct]
+        return False
+
+    elif ex_type == "SPEAK_SENTENCE":
+        # STT result comparison (normalised)
+        expected = answer_data.get("expected_text", "")
+        return str(user_answer).strip().lower() == expected.strip().lower()
+
+    return False
+
+
 class LessonService:
     def __init__(self):
         self.repository = lesson_repository
+        self.exercise_repository = exercise_repository
 
     def get_lesson_payload(
         self, db: Session, lesson_id: uuid.UUID
     ) -> Optional[Lesson]:
-        """Full lesson with exercises for client pre-fetch."""
+        """Full lesson with exercises for client pre-fetch.
+        Each exercise includes the type name but NOT answer_data.
+        """
         return self.repository.get_with_exercises(db, lesson_id)
+
+    def build_client_payload(self, lesson: Lesson) -> LessonPayload:
+        """Convert ORM Lesson → LessonPayload with typed ExerciseClient items."""
+        exercises: List[ExerciseClient] = []
+        for ex in lesson.exercises:
+            type_name = ex.exercise_type.name if ex.exercise_type else "UNKNOWN"
+            exercises.append(
+                ExerciseClient(
+                    id=ex.id,
+                    lesson_id=ex.lesson_id,
+                    type=type_name,
+                    question_data=ex.question_data or {},
+                )
+            )
+
+        return LessonPayload(
+            id=lesson.id,
+            unit_id=lesson.unit_id,
+            lesson_form_id=lesson.lesson_form_id,
+            title=lesson.title,
+            order_index=lesson.order_index,
+            exercises=exercises,
+        )
+
+    def get_exercises_for_lesson(
+        self, db: Session, lesson_id: uuid.UUID
+    ) -> List[ExerciseClient]:
+        """Return exercises for a lesson without answer_data (client mode)."""
+        exercises = self.exercise_repository.get_by_lesson(db, lesson_id)
+        result = []
+        for ex in exercises:
+            type_name = ex.exercise_type.name if ex.exercise_type else "UNKNOWN"
+            result.append(
+                ExerciseClient(
+                    id=ex.id,
+                    lesson_id=ex.lesson_id,
+                    type=type_name,
+                    question_data=ex.question_data or {},
+                )
+            )
+        return result
+
+    def evaluate_exercise(
+        self, db: Session, req: EvaluateRequest
+    ) -> EvaluateResponse:
+        """Server-side evaluation for a single exercise answer."""
+        from sqlalchemy.orm import selectinload
+        from sqlmodel import select
+
+        stmt = (
+            select(Exercise)
+            .where(Exercise.id == req.exercise_id)
+            .options(selectinload(Exercise.exercise_type))
+        )
+        exercise = db.exec(stmt).first()
+
+        if not exercise:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Exercise not found",
+            )
+
+        is_correct = _evaluate_exercise(exercise, req.user_answer)
+        return EvaluateResponse(
+            is_correct=is_correct,
+            answer_data=exercise.answer_data or {},
+        )
 
     def submit_lesson(
         self,
@@ -44,7 +159,6 @@ class LessonService:
         3. Update streak (SQL Server, no Redis)
         4. Write UserLessonProgress
         """
-        # Validate lesson exists
         lesson = self.repository.get(db, lesson_id)
         if not lesson:
             raise HTTPException(
@@ -52,38 +166,34 @@ class LessonService:
                 detail="Lesson not found",
             )
 
-        # Calculate XP
         total_answers = len(submission.answers)
         correct_answers = sum(1 for a in submission.answers if a.is_correct)
         accuracy = correct_answers / total_answers if total_answers > 0 else 0.0
 
-        xp_earned = 5  # default
+        xp_earned = 5
         for threshold, xp in XP_TIERS:
             if accuracy >= threshold:
                 xp_earned = xp
                 break
 
-        # Update user stats
         user.total_xp += xp_earned
         user.hearts = submission.hearts_left
 
-        # Update streak
         now = datetime.now(timezone.utc)
         if user.last_activity_at:
             delta = now - user.last_activity_at
             if delta.days == 0:
-                pass  # same day, streak unchanged
+                pass
             elif delta.days == 1:
                 user.current_streak += 1
             else:
-                user.current_streak = 1  # streak broken, restart
+                user.current_streak = 1
         else:
-            user.current_streak = 1  # first activity
+            user.current_streak = 1
         user.last_activity_at = now
 
         db.add(user)
 
-        # Write progress record
         mistakes = total_answers - correct_answers
         progress = UserLessonProgress(
             user_id=user.id,
