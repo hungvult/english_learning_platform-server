@@ -176,14 +176,21 @@ class LessonService:
         db.add(user)
 
         mistakes = total_answers - correct_answers
-        progress = UserLessonProgress(
-            user_id=user.id,
-            lesson_id=lesson_id,
-            score=submission.score,
-            mistakes=mistakes,
-            completed_at=now,
-        )
-        db.add(progress)
+        progress = db.get(UserLessonProgress, (user.id, lesson_id))
+        if progress:
+            # Update existing record
+            progress.score = max(progress.score, submission.score)
+            progress.mistakes = mistakes
+            progress.completed_at = now
+        else:
+            progress = UserLessonProgress(
+                user_id=user.id,
+                lesson_id=lesson_id,
+                score=submission.score,
+                mistakes=mistakes,
+                completed_at=now,
+            )
+            db.add(progress)
         db.flush()
 
         return ProgressResponse(
