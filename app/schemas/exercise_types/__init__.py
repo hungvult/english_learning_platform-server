@@ -37,7 +37,6 @@ class WordBankItem(BaseModel):
 # ---------------------------------------------------------------------------
 
 class CompleteConversationQuestion(BaseModel):
-    instruction: str
     text: str                    # The prompt / dialogue line
     options: List[OptionText]
 
@@ -57,7 +56,6 @@ class CompleteConversationExercise(BaseModel):
 # ---------------------------------------------------------------------------
 
 class ArrangeWordsQuestion(BaseModel):
-    instruction: str
     tokens: List[str]            # Shuffled word tokens to arrange
 
 
@@ -76,7 +74,6 @@ class ArrangeWordsExercise(BaseModel):
 # ---------------------------------------------------------------------------
 
 class CompleteTranslationQuestion(BaseModel):
-    instruction: str
     source_sentence: str         # Original sentence shown to user
     text_template: str           # Template with {0}, {1} … blanks
 
@@ -96,7 +93,6 @@ class CompleteTranslationExercise(BaseModel):
 # ---------------------------------------------------------------------------
 
 class PictureMatchQuestion(BaseModel):
-    instruction: str
     word: str                    # Word or phrase to match
     options: List[OptionImage]
 
@@ -116,7 +112,6 @@ class PictureMatchExercise(BaseModel):
 # ---------------------------------------------------------------------------
 
 class TypeHearQuestion(BaseModel):
-    instruction: str
     text: str                    # Sentence to convert to TTS audio
 
 
@@ -135,7 +130,6 @@ class TypeHearExercise(BaseModel):
 # ---------------------------------------------------------------------------
 
 class ListenFillQuestion(BaseModel):
-    instruction: str
     text: str                    # Sentence to convert to TTS audio
     word_bank: List[WordBankItem]
 
@@ -155,7 +149,6 @@ class ListenFillExercise(BaseModel):
 # ---------------------------------------------------------------------------
 
 class SpeakSentenceQuestion(BaseModel):
-    instruction: str
     sentence: str                # Sentence the user must speak
 
 
