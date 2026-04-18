@@ -149,7 +149,7 @@ class ListenFillExercise(BaseModel):
 # ---------------------------------------------------------------------------
 
 class SpeakSentenceQuestion(BaseModel):
-    sentence: str                # Sentence the user must speak
+    pass
 
 
 class SpeakSentenceAnswer(BaseModel):
