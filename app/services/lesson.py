@@ -158,8 +158,11 @@ class LessonService:
         user.hearts = submission.hearts_left
 
         now = datetime.now(timezone.utc)
-        if user.last_activity_at:
-            delta = now - user.last_activity_at
+        last_activity = user.last_activity_at
+        if last_activity is not None:
+            if last_activity.tzinfo is None:
+                last_activity = last_activity.replace(tzinfo=timezone.utc)
+            delta = now - last_activity
             if delta.days == 0:
                 pass
             elif delta.days == 1:
