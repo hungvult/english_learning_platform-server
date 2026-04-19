@@ -20,24 +20,10 @@ from app.schemas.client_progress import (
 class ClientProgressService:
     @staticmethod
     def _resolve_active_course(db: Session, user: User) -> Optional[Course]:
-        if user.active_course_id:
-            selected = db.get(Course, user.active_course_id)
-            if selected:
-                return selected
-
-        courses = db.exec(select(Course)).all()
-        if not courses:
+        if not user.active_course_id:
             return None
-
-        if user.cefr_level:
-            matched = next(
-                (course for course in courses if course.expected_cefr_level == user.cefr_level),
-                None,
-            )
-            if matched:
-                return matched
-
-        return sorted(courses, key=lambda course: course.title)[0]
+            
+        return db.get(Course, user.active_course_id)
 
     @staticmethod
     def _completed_lesson_ids(db: Session, user_id) -> Set:
