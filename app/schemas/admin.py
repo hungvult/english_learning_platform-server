@@ -125,7 +125,7 @@ class LessonReadAdmin(BaseModel):
 class ExerciseCreate(BaseModel):
     lesson_id: uuid.UUID
     exercise_type_id: uuid.UUID
-    question_data: Dict[str, Any] = {}
+    question_data: Optional[Dict[str, Any]] = None
     answer_data: Dict[str, Any] = {}
 
 
@@ -140,7 +140,7 @@ class ExerciseReadAdmin(BaseModel):
     id: uuid.UUID
     lesson_id: uuid.UUID
     exercise_type_id: uuid.UUID
-    question_data: Dict[str, Any]
+    question_data: Optional[Dict[str, Any]] = None
     answer_data: Dict[str, Any]
 
     class Config:

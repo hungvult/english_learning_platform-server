@@ -16,13 +16,15 @@ class JSONString(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         if value is None:
-            return "{}"
+            return None
         if isinstance(value, str):
             return value  # already serialised
         return json.dumps(value, ensure_ascii=False)
 
     def process_result_value(self, value, dialect):
-        if not value:
+        if value is None:
+            return None
+        if value == "":
             return {}
         try:
             return json.loads(value)
@@ -46,8 +48,8 @@ class Exercise(SQLModel, table=True):
     lesson_id: uuid.UUID = Field(foreign_key="Lessons.id")
     exercise_type_id: uuid.UUID = Field(foreign_key="ExerciseTypes.id")
 
-    question_data: Dict[str, Any] = Field(
-        default_factory=dict,
+    question_data: Dict[str, Any] | None = Field(
+        default=None,
         sa_column=Column(JSONString(length=None)),
     )
     answer_data: Dict[str, Any] = Field(

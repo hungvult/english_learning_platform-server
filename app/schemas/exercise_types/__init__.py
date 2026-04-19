@@ -111,17 +111,13 @@ class PictureMatchExercise(BaseModel):
 # TYPE_HEAR  (listen, then type what you hear)
 # ---------------------------------------------------------------------------
 
-class TypeHearQuestion(BaseModel):
-    text: str                    # Sentence to convert to TTS audio
-
-
 class TypeHearAnswer(BaseModel):
     correct_transcription: str
 
 
 class TypeHearExercise(BaseModel):
     type: Literal["TYPE_HEAR"]
-    question_data: TypeHearQuestion
+    question_data: None = None
     answer_data: TypeHearAnswer
 
 
