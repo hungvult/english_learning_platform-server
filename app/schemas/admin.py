@@ -147,6 +147,14 @@ class ExerciseReadAdmin(BaseModel):
         from_attributes = True
 
 
+class ExerciseTypeReadAdmin(BaseModel):
+    id: uuid.UUID
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
 class MistakeAnalytics(BaseModel):
     user_answer: str
     count: int

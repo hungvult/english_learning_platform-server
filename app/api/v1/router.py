@@ -7,6 +7,7 @@ from app.api.v1.endpoints.admin import (
     units as admin_units,
     lessons as admin_lessons,
     exercises as admin_exercises,
+    exercise_types as admin_exercise_types,
 )
 
 api_router = APIRouter()
@@ -23,3 +24,4 @@ api_router.include_router(admin_courses.router,   prefix="/admin/courses",   tag
 api_router.include_router(admin_units.router,     prefix="/admin/units",     tags=["Admin — Units"])
 api_router.include_router(admin_lessons.router,   prefix="/admin/lessons",   tags=["Admin — Lessons"])
 api_router.include_router(admin_exercises.router, prefix="/admin/exercises", tags=["Admin — Exercises"])
+api_router.include_router(admin_exercise_types.router, prefix="/admin/exercise-types", tags=["Admin — Exercises"])

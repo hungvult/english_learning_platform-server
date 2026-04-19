@@ -22,7 +22,7 @@ def list_units(
     _: User = Depends(require_admin),
 ):
     """List all units, optionally filtered by course_id."""
-    stmt = select(Unit)
+    stmt = select(Unit).order_by(Unit.id)
     if course_id:
         stmt = stmt.where(Unit.course_id == course_id)
     return db.exec(stmt.offset(skip).limit(limit)).all()

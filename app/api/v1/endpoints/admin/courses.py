@@ -21,7 +21,7 @@ def list_courses(
     _: User = Depends(require_admin),
 ):
     from sqlmodel import select
-    return db.exec(select(Course).offset(skip).limit(limit)).all()
+    return db.exec(select(Course).order_by(Course.id).offset(skip).limit(limit)).all()
 
 
 @router.post("/", response_model=CourseReadAdmin, status_code=status.HTTP_201_CREATED, summary="Create course")

@@ -22,7 +22,7 @@ def list_lessons(
     _: User = Depends(require_admin),
 ):
     """List all lessons, optionally filtered by unit_id."""
-    stmt = select(Lesson)
+    stmt = select(Lesson).order_by(Lesson.id)
     if unit_id:
         stmt = stmt.where(Lesson.unit_id == unit_id)
     return db.exec(stmt.offset(skip).limit(limit)).all()

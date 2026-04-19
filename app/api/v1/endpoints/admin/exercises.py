@@ -42,7 +42,7 @@ def list_exercises(
     _: User = Depends(require_admin),
 ):
     """List all exercises, optionally filtered by lesson_id."""
-    stmt = select(Exercise)
+    stmt = select(Exercise).order_by(Exercise.id)
     if lesson_id:
         stmt = stmt.where(Exercise.lesson_id == lesson_id)
     rows = db.exec(stmt.offset(skip).limit(limit)).all()
@@ -60,12 +60,12 @@ def create_exercise(
     safe_q, safe_a = validate_exercise_payload(
         db, payload.exercise_type_id, payload.question_data, payload.answer_data
     )
-    
+
     data = payload.model_dump()
     # Store dicts as JSON strings (NVARCHAR column), respecting null constraints
     data["question_data"] = json.dumps(safe_q) if safe_q is not None else None
     data["answer_data"] = json.dumps(safe_a)
-    
+
     exercise = Exercise(**data)
     db.add(exercise)
     db.commit()
@@ -99,23 +99,23 @@ def update_exercise(
 
     if any(k in update_data for k in ["exercise_type_id", "question_data", "answer_data"]):
         target_type_id = update_data.get("exercise_type_id", exercise.exercise_type_id)
-        
+
         # Need full merged data to perform cross-field validation
         q_data_raw = update_data.get("question_data", exercise.question_data)
         if isinstance(q_data_raw, str):
             q_data_raw = json.loads(q_data_raw)
-            
+
         a_data_raw = update_data.get("answer_data", exercise.answer_data)
         if isinstance(a_data_raw, str):
             a_data_raw = json.loads(a_data_raw)
-            
+
         safe_q, safe_a = validate_exercise_payload(db, target_type_id, q_data_raw, a_data_raw)
-        
+
         if "question_data" in update_data:
             update_data["question_data"] = json.dumps(safe_q) if safe_q is not None else None
         if "answer_data" in update_data:
             update_data["answer_data"] = json.dumps(safe_a)
-            
+
     # If there are manual updates to other fields or if the dumps are already set,
     # skip re-serializing because we handled it explicitly above.
     for key in ("question_data", "answer_data"):
