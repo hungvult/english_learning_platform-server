@@ -19,12 +19,12 @@ class AdminUserRead(BaseModel):
     email: str
     is_admin: bool
     cefr_level: Optional[str] = None
-    total_xp: int
-    hearts: int
-    gems: int
-    current_streak: int
+    total_xp: Optional[int] = 0
+    hearts: Optional[int] = 0
+    gems: Optional[int] = 0
+    current_streak: Optional[int] = 0
     last_activity_at: Optional[datetime] = None
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -34,11 +34,11 @@ class AdminUserUpdate(BaseModel):
     """Fields an admin can change on any user account."""
     username: Optional[str] = None
     email: Optional[EmailStr] = None
-    is_admin: Optional[bool] = None
     cefr_level: Optional[str] = None
     hearts: Optional[int] = None
     gems: Optional[int] = None
     total_xp: Optional[int] = None
+    current_streak: Optional[int] = None
 
 
 # ---------------------------------------------------------------------------
