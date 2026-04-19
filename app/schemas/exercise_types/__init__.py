@@ -162,6 +162,8 @@ class SpeakSentenceExercise(BaseModel):
 # Discriminated union — use as the single validator
 # ---------------------------------------------------------------------------
 
+from pydantic import Field
+
 ExerciseVariant = Annotated[
     Union[
         CompleteConversationExercise,
@@ -172,7 +174,7 @@ ExerciseVariant = Annotated[
         ListenFillExercise,
         SpeakSentenceExercise,
     ],
-    # Pydantic v2 discriminator — requires 'type' literal in every variant
+    Field(discriminator="type")
 ]
 
 EXERCISE_TYPE_NAMES = [

@@ -49,16 +49,23 @@ def list_exercises(
     return [_serialize(r) for r in rows]
 
 
+from app.services.exercise_validation import validate_exercise_payload
+
 @router.post("/", response_model=ExerciseReadAdmin, status_code=status.HTTP_201_CREATED, summary="Create exercise")
 def create_exercise(
     payload: ExerciseCreate,
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
 ):
+    safe_q, safe_a = validate_exercise_payload(
+        db, payload.exercise_type_id, payload.question_data, payload.answer_data
+    )
+    
     data = payload.model_dump()
-    # Store dicts as JSON strings (NVARCHAR column)
-    data["question_data"] = json.dumps(data["question_data"])
-    data["answer_data"] = json.dumps(data["answer_data"])
+    # Store dicts as JSON strings (NVARCHAR column), respecting null constraints
+    data["question_data"] = json.dumps(safe_q) if safe_q is not None else None
+    data["answer_data"] = json.dumps(safe_a)
+    
     exercise = Exercise(**data)
     db.add(exercise)
     db.commit()
@@ -89,10 +96,32 @@ def update_exercise(
     if not exercise:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
     update_data = payload.model_dump(exclude_unset=True)
-    # Serialize dict fields before saving
+
+    if any(k in update_data for k in ["exercise_type_id", "question_data", "answer_data"]):
+        target_type_id = update_data.get("exercise_type_id", exercise.exercise_type_id)
+        
+        # Need full merged data to perform cross-field validation
+        q_data_raw = update_data.get("question_data", exercise.question_data)
+        if isinstance(q_data_raw, str):
+            q_data_raw = json.loads(q_data_raw)
+            
+        a_data_raw = update_data.get("answer_data", exercise.answer_data)
+        if isinstance(a_data_raw, str):
+            a_data_raw = json.loads(a_data_raw)
+            
+        safe_q, safe_a = validate_exercise_payload(db, target_type_id, q_data_raw, a_data_raw)
+        
+        if "question_data" in update_data:
+            update_data["question_data"] = json.dumps(safe_q) if safe_q is not None else None
+        if "answer_data" in update_data:
+            update_data["answer_data"] = json.dumps(safe_a)
+            
+    # If there are manual updates to other fields or if the dumps are already set,
+    # skip re-serializing because we handled it explicitly above.
     for key in ("question_data", "answer_data"):
         if key in update_data and isinstance(update_data[key], dict):
             update_data[key] = json.dumps(update_data[key])
+
     for field, value in update_data.items():
         setattr(exercise, field, value)
     db.add(exercise)
