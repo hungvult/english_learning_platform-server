@@ -25,3 +25,4 @@ class Lesson(SQLModel, table=True):
     lesson_form: LessonForm = Relationship(back_populates="lessons")
     exercises: List["Exercise"] = Relationship(back_populates="lesson")
     lesson_progress: List["UserLessonProgress"] = Relationship(back_populates="lesson")
+    exercise_logs: List["UserExerciseLog"] = Relationship(back_populates="lesson")

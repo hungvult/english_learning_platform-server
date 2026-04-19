@@ -5,11 +5,13 @@ from sqlmodel import Session, select
 import json
 import uuid
 
+from sqlalchemy import func
 from app.core.database import get_db
 from app.api.dependencies import require_admin
 from app.models.user import User
 from app.models.exercise import Exercise
-from app.schemas.admin import ExerciseCreate, ExerciseUpdate, ExerciseReadAdmin
+from app.models.user_exercise_log import UserExerciseLog
+from app.schemas.admin import ExerciseCreate, ExerciseUpdate, ExerciseReadAdmin, MistakeAnalytics
 
 router = APIRouter()
 
@@ -110,3 +112,32 @@ def delete_exercise(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
     db.delete(exercise)
     db.commit()
+
+
+@router.get("/{exercise_id}/logs", response_model=List[MistakeAnalytics], summary="Get common mistaken answers for exercise")
+def get_exercise_logs(
+    exercise_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    """
+    Return the most common INCORRECT answers submitted for this exercise.
+    Useful for admins to track user mistakes and improve question clarity.
+    """
+    stmt = (
+        select(
+            UserExerciseLog.user_answer,
+            func.count(UserExerciseLog.id).label("count")
+        )
+        .where(UserExerciseLog.exercise_id == exercise_id)
+        .where(UserExerciseLog.is_correct == False)
+        .group_by(UserExerciseLog.user_answer)
+        .order_by(func.count(UserExerciseLog.id).desc())
+    )
+
+    rows = db.exec(stmt).all()
+
+    return [
+        MistakeAnalytics(user_answer=row[0], count=row[1])
+        for row in rows
+    ]

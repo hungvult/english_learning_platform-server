@@ -145,3 +145,8 @@ class ExerciseReadAdmin(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class MistakeAnalytics(BaseModel):
+    user_answer: str
+    count: int

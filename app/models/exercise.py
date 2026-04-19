@@ -57,3 +57,4 @@ class Exercise(SQLModel, table=True):
 
     lesson: "Lesson" = Relationship(back_populates="exercises")
     exercise_type: ExerciseType = Relationship(back_populates="exercises")
+    logs: List["UserExerciseLog"] = Relationship(back_populates="exercise")

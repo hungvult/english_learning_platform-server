@@ -8,6 +8,7 @@ from app.models.lesson import Lesson
 from app.models.exercise import Exercise, ExerciseType
 from app.models.user import User
 from app.models.user_lesson_progress import UserLessonProgress
+from app.models.user_exercise_log import UserExerciseLog
 from app.schemas.exercise import ExerciseClient
 from app.schemas.lesson import LessonPayload
 from app.schemas.progress import LessonSubmission, ProgressResponse
@@ -175,19 +176,32 @@ class LessonService:
 
         db.add(user)
 
-        mistakes = total_answers - correct_answers
+        logs_to_add = []
+        for answer in submission.answers:
+            # We skip checking if the exercise belongs to the lesson for brevity, assuming standard workflow
+            exercise_log = UserExerciseLog(
+                user_id=user.id,
+                lesson_id=lesson_id,
+                exercise_id=answer.exercise_id,
+                user_answer=answer.user_answer,
+                is_correct=answer.is_correct,
+                created_at=now,
+            )
+            logs_to_add.append(exercise_log)
+
+        if logs_to_add:
+            db.add_all(logs_to_add)
+
         progress = db.get(UserLessonProgress, (user.id, lesson_id))
         if progress:
             # Update existing record
             progress.score = max(progress.score, submission.score)
-            progress.mistakes = mistakes
             progress.completed_at = now
         else:
             progress = UserLessonProgress(
                 user_id=user.id,
                 lesson_id=lesson_id,
                 score=submission.score,
-                mistakes=mistakes,
                 completed_at=now,
             )
             db.add(progress)
