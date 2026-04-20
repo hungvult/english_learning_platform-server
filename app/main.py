@@ -72,8 +72,11 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # Static files
 # ---------------------------------------------------------------------------
-audio_dir = os.path.join(os.path.dirname(__file__), "static", "audio")
-os.makedirs(audio_dir, exist_ok=True)
+static_dirs = ["audio", "images"]
+for dir_name in static_dirs:
+    dir_path = os.path.join(os.path.dirname(__file__), "static", dir_name)
+    os.makedirs(dir_path, exist_ok=True)
+
 app.mount(
     "/static",
     StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),

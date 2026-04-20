@@ -1,6 +1,7 @@
 """Admin endpoints: exercise management."""
+from pathlib import Path
 from typing import List
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile, status
 from sqlmodel import Session, select
 import json
 import uuid
@@ -14,6 +15,32 @@ from app.models.user_exercise_log import UserExerciseLog
 from app.schemas.admin import ExerciseCreate, ExerciseUpdate, ExerciseReadAdmin, MistakeAnalytics
 
 router = APIRouter()
+
+IMAGES_DIR = Path(__file__).resolve().parents[4] / "static" / "images"
+ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+
+def _normalize_image_url(image_url: str) -> str:
+    value = image_url.strip()
+    if value.startswith("images/"):
+        return value.removeprefix("images/")
+    if value.startswith("/static/images/"):
+        return value.removeprefix("/static/images/")
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="image_url must start with images/ or /static/images/",
+    )
+
+
+def _safe_image_filename(image_url: str) -> str:
+    relative_path = _normalize_image_url(image_url)
+    candidate = Path(relative_path).name
+    if candidate != relative_path or candidate in {"", ".", ".."}:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid image filename",
+        )
+    return candidate
 
 
 def _serialize(exercise: Exercise) -> ExerciseReadAdmin:
@@ -48,6 +75,63 @@ def list_exercises(
         stmt = stmt.where(Exercise.lesson_id == lesson_id)
     rows = db.exec(stmt.offset(skip).limit(limit)).all()
     return [_serialize(r) for r in rows]
+
+
+@router.post("/upload-image", summary="Upload image for picture match")
+async def upload_image(
+    file: UploadFile = File(...),
+    _: User = Depends(require_admin),
+):
+    """Upload an image to static/images and return a normalized image_url."""
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Only image files are allowed",
+        )
+
+    extension = Path(file.filename or "").suffix.lower()
+    if extension not in ALLOWED_IMAGE_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Unsupported image extension",
+        )
+
+    IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+
+    generated_name = f"{uuid.uuid4().hex}{extension}"
+    destination = IMAGES_DIR / generated_name
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Uploaded file is empty",
+        )
+
+    destination.write_bytes(content)
+
+    return {
+        "image_url": f"images/{generated_name}",
+        "static_url": f"/static/images/{generated_name}",
+    }
+
+
+@router.delete("/delete-image", status_code=status.HTTP_204_NO_CONTENT, summary="Delete uploaded image")
+def delete_image(
+    image_url: str = Query(..., description="images/<filename> or /static/images/<filename>"),
+    _: User = Depends(require_admin),
+):
+    """Delete an image from static/images by its stored image_url."""
+    filename = _safe_image_filename(image_url)
+    target_path = IMAGES_DIR / filename
+
+    if not target_path.exists() or not target_path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Image not found",
+        )
+
+    target_path.unlink()
 
 
 from app.services.exercise_validation import validate_exercise_payload

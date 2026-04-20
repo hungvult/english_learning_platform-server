@@ -38,7 +38,7 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"ExerciseType {exercise_type_id} does not exist"
         )
-    
+
     type_name = exercise_type.name
 
     # 1. Null Checks for question_data
@@ -56,7 +56,7 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=f"question_data cannot be null for {type_name}"
             )
-        
+
         # 2. Base Pydantic Validation for Question
         q_schema = QUESTION_SCHEMA_MAP.get(type_name)
         if not q_schema:
@@ -67,16 +67,16 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
         try:
             q_obj = q_schema.model_validate(question_data)
             q_dict = q_obj.model_dump()
-            
+
             # Additional structural checks based on domain logic
             if type_name in ("COMPLETE_CONVERSATION", "PICTURE_MATCH"):
                 if len(q_obj.options) < 2:
                     raise HTTPException(422, "options array must have a minimum length of 2")
-            
+
             elif type_name == "ARRANGE_WORDS":
                 if len(q_obj.tokens) < 2:
                     raise HTTPException(422, "tokens array must have a minimum length of 2")
-            
+
             elif type_name == "LISTEN_FILL":
                 if len(q_obj.word_bank) < 2:
                     raise HTTPException(422, "word_bank array must have a minimum length of 2")
@@ -117,6 +117,32 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
                 detail=f"correct_option_id '{a_obj.correct_option_id}' does not exactly match any id present in question_data.options"
             )
 
+    if type_name == "PICTURE_MATCH":
+        for option in q_obj.options:
+            image_url = option.image_url.strip()
+            if not image_url:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="image_url cannot be empty for PICTURE_MATCH options"
+                )
+
+            is_allowed_image_path = (
+                image_url.startswith("images/")
+                or image_url.startswith("/static/images/")
+                or image_url.startswith("http://")
+                or image_url.startswith("https://")
+                or image_url.startswith("/media/")
+            )
+
+            if not is_allowed_image_path:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=(
+                        "PICTURE_MATCH image_url must start with images/, /static/images/, "
+                        "http://, https://, or /media/"
+                    )
+                )
+
     elif type_name == "COMPLETE_TRANSLATION":
         placeholders = set(re.findall(r"\{\d+\}", q_obj.text_template))
         if len(placeholders) != len(a_obj.correct_words):
@@ -135,11 +161,11 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
         token_counts = {}
         for t in q_obj.tokens:
             token_counts[t] = token_counts.get(t, 0) + 1
-        
+
         seq_counts = {}
         for word in a_obj.correct_sequence:
             seq_counts[word] = seq_counts.get(word, 0) + 1
-            
+
         for word, count in seq_counts.items():
             if token_counts.get(word, 0) < count:
                 raise HTTPException(
