@@ -47,7 +47,7 @@ docker compose build
 
 ## Project Structure
 
-```
+```text
 app/
 ├── api/v1/endpoints/   # Route handlers (auth, users, courses, lessons, exercises)
 ├── core/               # Config, database engine, JWT/bcrypt security

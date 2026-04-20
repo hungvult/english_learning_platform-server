@@ -63,8 +63,8 @@ def create_exercise(
 
     data = payload.model_dump()
     # Store dicts as JSON strings (NVARCHAR column), respecting null constraints
-    data["question_data"] = json.dumps(safe_q) if safe_q is not None else None
-    data["answer_data"] = json.dumps(safe_a)
+    data["question_data"] = json.dumps(safe_q, ensure_ascii=False) if safe_q is not None else None
+    data["answer_data"] = json.dumps(safe_a, ensure_ascii=False)
 
     exercise = Exercise(**data)
     db.add(exercise)
@@ -112,15 +112,15 @@ def update_exercise(
         safe_q, safe_a = validate_exercise_payload(db, target_type_id, q_data_raw, a_data_raw)
 
         if "question_data" in update_data:
-            update_data["question_data"] = json.dumps(safe_q) if safe_q is not None else None
+            update_data["question_data"] = json.dumps(safe_q, ensure_ascii=False) if safe_q is not None else None
         if "answer_data" in update_data:
-            update_data["answer_data"] = json.dumps(safe_a)
+            update_data["answer_data"] = json.dumps(safe_a, ensure_ascii=False)
 
     # If there are manual updates to other fields or if the dumps are already set,
     # skip re-serializing because we handled it explicitly above.
     for key in ("question_data", "answer_data"):
         if key in update_data and isinstance(update_data[key], dict):
-            update_data[key] = json.dumps(update_data[key])
+            update_data[key] = json.dumps(update_data[key], ensure_ascii=False)
 
     for field, value in update_data.items():
         setattr(exercise, field, value)

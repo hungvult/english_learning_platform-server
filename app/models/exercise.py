@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, Unicode, UnicodeText
 from sqlalchemy.types import TypeDecorator
 from sqlmodel import SQLModel, Field, Relationship
 import uuid
@@ -11,7 +11,7 @@ class JSONString(TypeDecorator):
     """Store a Python dict as a JSON string in an NVARCHAR(MAX) column.
     Required for SQL Server which has no native JSON column type.
     """
-    impl = String
+    impl = UnicodeText
     cache_ok = True
 
     def process_bind_param(self, value, dialect):
@@ -36,7 +36,7 @@ class ExerciseType(SQLModel, table=True):
     __tablename__ = "ExerciseTypes"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    name: str  # e.g. COMPLETE_CONVERSATION, ARRANGE_WORDS …
+    name: str = Field(sa_type=Unicode(100))  # e.g. COMPLETE_CONVERSATION, ARRANGE_WORDS …
 
     exercises: List["Exercise"] = Relationship(back_populates="exercise_type")
 
@@ -50,11 +50,11 @@ class Exercise(SQLModel, table=True):
 
     question_data: Dict[str, Any] | None = Field(
         default=None,
-        sa_column=Column(JSONString(length=None)),
+        sa_column=Column(JSONString()),
     )
     answer_data: Dict[str, Any] = Field(
         default_factory=dict,
-        sa_column=Column(JSONString(length=None)),
+        sa_column=Column(JSONString()),
     )
 
     lesson: "Lesson" = Relationship(back_populates="exercises")

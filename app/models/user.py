@@ -1,7 +1,7 @@
 from typing import Optional, List
 from datetime import datetime, timezone
-from sqlmodel import SQLModel, Field, Relationship, AutoString
-from sqlalchemy import String
+from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy import String, Unicode
 import uuid
 
 
@@ -9,9 +9,9 @@ class User(SQLModel, table=True):
     __tablename__ = "Users"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    username: str = Field(index=True, sa_type=String(150))
-    email: str = Field(unique=True, index=True, sa_type=String(254))
-    hashed_password: str
+    username: str = Field(index=True, sa_type=Unicode(150))
+    email: str = Field(unique=True, index=True, sa_type=Unicode(254))
+    hashed_password: str = Field(sa_type=String(255))
     is_admin: bool = Field(default=False)
     active_course_id: Optional[uuid.UUID] = Field(default=None, foreign_key="Courses.id")
     cefr_level: Optional[str] = Field(default=None, max_length=2)

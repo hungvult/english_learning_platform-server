@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import uuid
-from sqlalchemy import String
+from sqlalchemy import UnicodeText
 from sqlmodel import SQLModel, Field, Relationship
 
 class UserExerciseLog(SQLModel, table=True):
@@ -12,7 +12,7 @@ class UserExerciseLog(SQLModel, table=True):
     exercise_id: uuid.UUID = Field(foreign_key="Exercises.id")
 
     # Store exact answer payload submitted
-    user_answer: str = Field(sa_type=String)
+    user_answer: str = Field(sa_type=UnicodeText)
     is_correct: bool
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
