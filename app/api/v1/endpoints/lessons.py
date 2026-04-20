@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 import uuid
 
 from app.core.database import get_db
-from app.api.dependencies import get_current_user
+from app.api.dependencies import require_authenticated_user
 from app.models.user import User
 from app.models.lesson import Lesson
 from app.models.exercise import Exercise
@@ -69,7 +69,7 @@ def _get_active_lesson(db: Session, user: User) -> Lesson:
 @router.get("/active/payload", response_model=LessonPayload)
 def get_active_lesson_payload(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_authenticated_user),
 ):
     """
     Returns the pre-fetch payload for the user's current active lesson.
@@ -91,7 +91,7 @@ def get_active_lesson_payload(
 def get_lesson_payload(
     lesson_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_authenticated_user),
 ):
     """
     Pre-fetch the full lesson payload (exercises with question_data) for
@@ -112,7 +112,7 @@ def get_lesson_payload(
 def get_lesson_exercises(
     lesson_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_authenticated_user),
 ):
     """
     Retrieve exercises for a lesson without answer_data.
@@ -129,7 +129,7 @@ def submit_lesson(
     lesson_id: uuid.UUID,
     submission: LessonSubmission,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_authenticated_user),
 ):
     """
     Submit the final lesson completion payload (Spec §6.4).

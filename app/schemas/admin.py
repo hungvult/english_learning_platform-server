@@ -125,6 +125,7 @@ class LessonReadAdmin(BaseModel):
 class ExerciseCreate(BaseModel):
     lesson_id: uuid.UUID
     exercise_type_id: uuid.UUID
+    order_index: int = 0
     question_data: Optional[Dict[str, Any]] = None
     answer_data: Dict[str, Any] = {}
 
@@ -132,6 +133,7 @@ class ExerciseCreate(BaseModel):
 class ExerciseUpdate(BaseModel):
     lesson_id: Optional[uuid.UUID] = None
     exercise_type_id: Optional[uuid.UUID] = None
+    order_index: Optional[int] = None
     question_data: Optional[Dict[str, Any]] = None
     answer_data: Optional[Dict[str, Any]] = None
 
@@ -140,6 +142,7 @@ class ExerciseReadAdmin(BaseModel):
     id: uuid.UUID
     lesson_id: uuid.UUID
     exercise_type_id: uuid.UUID
+    order_index: int = 0
     question_data: Optional[Dict[str, Any]] = None
     answer_data: Dict[str, Any]
 

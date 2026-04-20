@@ -1,6 +1,6 @@
 """Admin endpoints: exercise management."""
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlmodel import Session, select
 import json
 import uuid
@@ -28,6 +28,7 @@ def _serialize(exercise: Exercise) -> ExerciseReadAdmin:
         id=exercise.id,
         lesson_id=exercise.lesson_id,
         exercise_type_id=exercise.exercise_type_id,
+        order_index=exercise.order_index,
         question_data=q,
         answer_data=a,
     )
@@ -42,7 +43,7 @@ def list_exercises(
     _: User = Depends(require_admin),
 ):
     """List all exercises, optionally filtered by lesson_id."""
-    stmt = select(Exercise).order_by(Exercise.id)
+    stmt = select(Exercise).order_by(Exercise.order_index, Exercise.id)
     if lesson_id:
         stmt = stmt.where(Exercise.lesson_id == lesson_id)
     rows = db.exec(stmt.offset(skip).limit(limit)).all()
@@ -141,6 +142,30 @@ def delete_exercise(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
     db.delete(exercise)
     db.commit()
+
+
+@router.post("/swap-order", response_model=List[ExerciseReadAdmin], summary="Swap order_index between two exercises")
+def swap_exercise_order(
+    id_a: uuid.UUID = Body(...),
+    id_b: uuid.UUID = Body(...),
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    """Swap the order_index values of two exercises atomically."""
+    ex_a = db.get(Exercise, id_a)
+    ex_b = db.get(Exercise, id_b)
+    if not ex_a:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Exercise {id_a} not found")
+    if not ex_b:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Exercise {id_b} not found")
+
+    ex_a.order_index, ex_b.order_index = ex_b.order_index, ex_a.order_index
+    db.add(ex_a)
+    db.add(ex_b)
+    db.commit()
+    db.refresh(ex_a)
+    db.refresh(ex_b)
+    return [_serialize(ex_a), _serialize(ex_b)]
 
 
 @router.get("/{exercise_id}/logs", response_model=List[MistakeAnalytics], summary="Get common mistaken answers for exercise")

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlmodel import Session
 import uuid
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import require_authenticated_user
 from app.core.database import get_db
 from app.models.user import User
 from app.schemas.client_progress import UnitSummaryCompat
@@ -29,7 +29,7 @@ class UserCoursesResponse(BaseModel):
 @router.get("/me", response_model=UserCoursesResponse)
 def get_user_courses(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_authenticated_user),
 ):
     """Retrieve courses alongside current user's active course ID."""
     courses = course_service.list_courses(db)
@@ -52,7 +52,7 @@ def get_user_courses(
 def select_course(
     course_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_authenticated_user),
 ):
     """Select the active course for the current user."""
     course = course_service.get_course_tree(db, course_id)
@@ -77,7 +77,7 @@ def list_courses(db: Session = Depends(get_db)):
 @router.get("/active/units", response_model=List[UnitSummaryCompat])
 def list_active_course_units(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_authenticated_user),
 ):
     """Compatibility endpoint for frontend learn page unit list."""
     return client_progress_service.get_active_course_units(db, current_user)

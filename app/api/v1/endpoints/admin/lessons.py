@@ -1,6 +1,6 @@
 """Admin endpoints: lesson management."""
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlmodel import Session, select
 import uuid
 
@@ -82,3 +82,27 @@ def delete_lesson(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found")
     db.delete(lesson)
     db.commit()
+
+
+@router.post("/swap-order", response_model=List[LessonReadAdmin], summary="Swap order_index between two lessons")
+def swap_lesson_order(
+    id_a: uuid.UUID = Body(...),
+    id_b: uuid.UUID = Body(...),
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    """Swap the order_index values of two lessons atomically."""
+    lesson_a = db.get(Lesson, id_a)
+    lesson_b = db.get(Lesson, id_b)
+    if not lesson_a:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Lesson {id_a} not found")
+    if not lesson_b:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Lesson {id_b} not found")
+
+    lesson_a.order_index, lesson_b.order_index = lesson_b.order_index, lesson_a.order_index
+    db.add(lesson_a)
+    db.add(lesson_b)
+    db.commit()
+    db.refresh(lesson_a)
+    db.refresh(lesson_b)
+    return [lesson_a, lesson_b]

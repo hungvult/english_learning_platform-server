@@ -47,6 +47,7 @@ class Exercise(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     lesson_id: uuid.UUID = Field(foreign_key="Lessons.id")
     exercise_type_id: uuid.UUID = Field(foreign_key="ExerciseTypes.id")
+    order_index: int = Field(default=0)
 
     question_data: Dict[str, Any] | None = Field(
         default=None,

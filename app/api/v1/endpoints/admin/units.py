@@ -1,6 +1,5 @@
-"""Admin endpoints: unit management."""
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlmodel import Session, select
 import uuid
 
@@ -82,3 +81,27 @@ def delete_unit(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unit not found")
     db.delete(unit)
     db.commit()
+
+
+@router.post("/swap-order", response_model=List[UnitReadAdmin], summary="Swap order_index between two units")
+def swap_unit_order(
+    id_a: uuid.UUID = Body(...),
+    id_b: uuid.UUID = Body(...),
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    """Swap the order_index values of two units atomically."""
+    unit_a = db.get(Unit, id_a)
+    unit_b = db.get(Unit, id_b)
+    if not unit_a:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Unit {id_a} not found")
+    if not unit_b:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Unit {id_b} not found")
+
+    unit_a.order_index, unit_b.order_index = unit_b.order_index, unit_a.order_index
+    db.add(unit_a)
+    db.add(unit_b)
+    db.commit()
+    db.refresh(unit_a)
+    db.refresh(unit_b)
+    return [unit_a, unit_b]
