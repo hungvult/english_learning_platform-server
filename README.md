@@ -1,77 +1,55 @@
 # English Learning Platform — Server
 
-FastAPI backend. Python 3.13+, SQL Server, JWT auth.
+This is the backend for the **English Learning Platform**, built with **FastAPI** and **SQLModel**. It leverages **Microsoft SQL Server** for data persistence and **JWT** for secure authentication and RBAC (Role-Based Access Control).
 
 ## Prerequisites
+- **Python**: 3.10+ (Recommended: 3.13)
+- **Database**: SQL Server 2022 instance.
+- **Driver**: Microsoft ODBC Driver 18 for SQL Server.
 
-- Python 3.10+
-- SQL Server instance (local or remote)
-- Microsoft ODBC Driver 18 for SQL Server
-
-## `.env` fields
+## Environment Variables
+The application requires a `.env` file in the `server/` directory:
 
 | Variable                      | Description                         | Example                                                                                                                     |
 | ----------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `DATABASE_URL`                | SQL Server connection string        | `mssql+pyodbc://sa:Password@localhost:1433/EnglishLearning?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes` |
-| `SECRET_KEY`                  | JWT signing secret                  | any long random string                                                                                                      |
+| `SECRET_KEY`                  | JWT signing secret                  | (Your random secret string)                                                                                                 |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Token lifetime (default 1440 = 24h) | `1440`                                                                                                                      |
 
-## Docker Development
+## Installation & Running Locally
 
-### Running with Hot Reload
-
-To start the development server with automatic reloading when code changes:
-
-```bash
-docker compose up dev
-```
-
-- Source code in `./app` is bind-mounted into the container.
-- Changes are reflected immediately.
-
-### Running Production Image
-
-To run the lean, security-hardened production image:
-
-```bash
-docker compose up backend
-```
-
-### Rebuilding
-
-If you change `requirements.txt` or the `Dockerfile`:
-
-```bash
-docker compose build
-```
+1. Create a virtual environment: `python -m venv venv`
+2. Activate venv & install dependencies: `source venv/bin/activate && pip install -r requirements.txt`
+3. Run with uvicorn: `uvicorn app.main:app --reload`
 
 ## Project Structure
 
-```text
-app/
-├── api/v1/endpoints/   # Route handlers (auth, users, courses, lessons, exercises)
-├── core/               # Config, database engine, JWT/bcrypt security
-├── models/             # SQLModel table definitions
-├── repositories/       # Data access layer
-├── schemas/            # Pydantic request/response schemas
-├── services/           # Business logic (XP, streak, auth)
-├── static/audio/       # Audio files for listening exercises
-└── main.py             # App entry point
-```
+- **`app/main.py`**: Entry point and FastAPI configuration.
+- **`app/api/v1/`**: API Route documentation and versioned router.
+  - **`endpoints/admin/`**: High-privilege routes for CMS operations.
+- **`app/models/`**: SQLModel table definitions (e.g., `Exercise`, `Lesson`, `Unit` with `order_index`).
+- **`app/schemas/`**: Pydantic models for request/response validation (Admin/Client subsets).
+- **`app/services/`**: Core business logic: XP calculation, streaks, and validation services.
+- **`app/core/`**: Security configuration, database engine, and global settings.
+- **`static/audio/`**: Directory for serving exercise audio assets.
 
-## API Endpoints
+## API Endpoints (Core)
 
-| Method | Path                           | Auth | Description               |
-| ------ | ------------------------------ | ---- | ------------------------- |
-| POST   | `/api/v1/auth/register`        | No   | Register and get JWT      |
-| POST   | `/api/v1/auth/login`           | No   | Login and get JWT         |
-| GET    | `/api/v1/users/me`             | Yes  | Current user profile      |
-| PATCH  | `/api/v1/users/me`             | Yes  | Update profile            |
-| GET    | `/api/v1/courses/`             | No   | List courses              |
-| GET    | `/api/v1/courses/{id}`         | No   | Course with units/lessons |
-| GET    | `/api/v1/lessons/{id}/payload` | Yes  | Full exercise payload     |
-| POST   | `/api/v1/lessons/{id}/submit`  | Yes  | Submit lesson completion  |
+| Method | Path                           | Auth | Description                   |
+| ------ | ------------------------------ | ---- | ----------------------------- |
+| POST   | `/api/v1/auth/login`           | No   | Get JWT token                 |
+| GET    | `/api/v1/courses/{id}`         | No   | Get curriculum hierarchy      |
+| GET    | `/api/v1/lessons/{id}/payload` | Yes  | Get full exercise data        |
+| POST   | `/api/v1/lessons/{id}/submit`  | Yes  | Progress & XP submission      |
 
-## Default Password
+## Admin Endpoints (Reordering)
 
-All seeded users use `abc123` as the default password.
+| Method | Path                                 | Description                                 |
+| ------ | ------------------------------------ | ------------------------------------------- |
+| POST   | `/api/v1/admin/units/swap-order`     | Atomic swap of `order_index` for two units  |
+| POST   | `/api/v1/admin/lessons/swap-order`   | Atomic swap of `order_index` for two lessons|
+| POST   | `/api/v1/admin/exercises/swap-order` | Atomic swap of `order_index` for exercises  |
+
+## Database Migration
+Standalone SQL script: `scripts/add_exercise_order_index.sql`.
+Used to add sequencing support to legacy tables.
