@@ -161,3 +161,9 @@ class ExerciseTypeReadAdmin(BaseModel):
 class MistakeAnalytics(BaseModel):
     user_answer: str
     count: int
+
+
+class ExerciseDependencySummary(BaseModel):
+    exercise_id: uuid.UUID
+    lesson_id: uuid.UUID
+    dependent_user_exercise_logs: int

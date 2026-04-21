@@ -6,13 +6,19 @@ from sqlmodel import Session, select
 import json
 import uuid
 
-from sqlalchemy import func
+from sqlalchemy import delete, func
 from app.core.database import get_db
 from app.api.dependencies import require_admin
 from app.models.user import User
 from app.models.exercise import Exercise
 from app.models.user_exercise_log import UserExerciseLog
-from app.schemas.admin import ExerciseCreate, ExerciseUpdate, ExerciseReadAdmin, MistakeAnalytics
+from app.schemas.admin import (
+    ExerciseCreate,
+    ExerciseUpdate,
+    ExerciseReadAdmin,
+    ExerciseDependencySummary,
+    MistakeAnalytics,
+)
 
 router = APIRouter()
 
@@ -224,8 +230,41 @@ def delete_exercise(
     exercise = db.get(Exercise, exercise_id)
     if not exercise:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
+
+    dependent_logs = db.exec(
+        select(func.count(UserExerciseLog.id)).where(UserExerciseLog.exercise_id == exercise_id)
+    ).one()
+
+    if dependent_logs:
+        db.exec(delete(UserExerciseLog).where(UserExerciseLog.exercise_id == exercise_id))
+
     db.delete(exercise)
     db.commit()
+
+
+@router.get(
+    "/{exercise_id}/dependencies",
+    response_model=ExerciseDependencySummary,
+    summary="Get exercise delete dependencies",
+)
+def get_exercise_dependencies(
+    exercise_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    exercise = db.get(Exercise, exercise_id)
+    if not exercise:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
+
+    dependent_logs = db.exec(
+        select(func.count(UserExerciseLog.id)).where(UserExerciseLog.exercise_id == exercise_id)
+    ).one()
+
+    return ExerciseDependencySummary(
+        exercise_id=exercise.id,
+        lesson_id=exercise.lesson_id,
+        dependent_user_exercise_logs=dependent_logs,
+    )
 
 
 @router.post("/swap-order", response_model=List[ExerciseReadAdmin], summary="Swap order_index between two exercises")
