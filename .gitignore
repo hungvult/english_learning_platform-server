@@ -214,4 +214,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
-app/static/images
+app/static/images/*
+!app/static/images/.gitkeep
+app/static/audio/*
+!app/static/audio/.gitkeep

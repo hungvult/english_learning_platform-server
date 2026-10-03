@@ -4,9 +4,18 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 import os
 
+from contextlib import asynccontextmanager
+from sqlmodel import SQLModel
+from app.core.database import _get_engine
 # Import all models so SQLModel metadata is populated
 import app.models  # noqa: F401
 from app.api.v1.router import api_router
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Ensure database schema is created on startup
+    SQLModel.metadata.create_all(_get_engine())
+    yield
 
 # ---------------------------------------------------------------------------
 # Tag metadata — controls ordering and descriptions in Swagger UI
@@ -53,6 +62,7 @@ app = FastAPI(
         "Endpoints under the **Admin —** groups require `is_admin = true` on the user account."
     ),
     openapi_tags=TAGS_METADATA,
+    lifespan=lifespan,
     # Keep Swagger UI and ReDoc at their default paths
     docs_url="/docs",
     redoc_url="/redoc",

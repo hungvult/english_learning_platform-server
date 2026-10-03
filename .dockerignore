@@ -1,22 +1,50 @@
-# Python
+# Version control
+.git
+.gitignore
+
+# Python virtual environments & bytecode
 venv/
+.venv/
+env/
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 .Python
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Environment files (inject at runtime via docker run --env-file or compose)
-.env
-.env.*
+# Environment files (inject at runtime)
+.env*
+!.env.example
 
-# Git
-.git/
-.gitignore
+# Security & Credentials
+*.pem
+*.key
+*.pfx
+*.cert
+*.crt
 
-# Docs
-README.md
+# Uploaded runtime assets (keep directory structure via .gitkeep)
+app/static/audio/*
+app/static/images/*
+!app/static/audio/.gitkeep
+!app/static/images/.gitkeep
 
-# IDE
+# Editor & OS files
 .vscode/
 .idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs & temporary files
+*.log
+tmp/
+
+# Docker & Docs
+Dockerfile*
+.dockerignore
+README.md
