@@ -4,17 +4,29 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 import os
 
+import logging
 from contextlib import asynccontextmanager
+from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import SQLModel
 from app.core.database import _get_engine
+from app.core.config import get_settings
 # Import all models so SQLModel metadata is populated
 import app.models  # noqa: F401
 from app.api.v1.router import api_router
 
+logger = logging.getLogger("uvicorn.error")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure database schema is created on startup
-    SQLModel.metadata.create_all(_get_engine())
+    try:
+        SQLModel.metadata.create_all(_get_engine())
+        logger.info("[lifespan] Database schema verification completed.")
+    except SQLAlchemyError as exc:
+        logger.warning(
+            "[lifespan] Could not verify/create database schema on startup: %s. "
+            "If the DB is still starting up, migrations or seeder will handle it.",
+            exc,
+        )
     yield
 
 # ---------------------------------------------------------------------------
@@ -73,7 +85,7 @@ app = FastAPI(
 # ---------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=get_settings().cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
