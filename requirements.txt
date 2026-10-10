@@ -11,3 +11,4 @@ alembic
 httpx
 python-multipart
 email-validator
+ruff

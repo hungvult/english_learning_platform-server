@@ -1,0 +1,40 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line length handled by ruff format
+    "B008",  # do not perform function calls in argument defaults (standard for FastAPI Depends)
+    "B904",  # allow raise without from in standard FastAPI HTTPExceptions
+    "UP046", # allow Generic[ModelType] syntax
+]
+
+[tool.ruff.lint.per-file-ignores]
+# SQLModel uses forward references in strings without imports to avoid circular deps
+"app/models/*" = ["F821"]
+# Allow unused imports in __init__.py files (re-exports)
+"**/__init__.py" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
