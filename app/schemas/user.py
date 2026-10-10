@@ -1,7 +1,7 @@
-from typing import Optional
-from datetime import datetime
-from pydantic import BaseModel
 import uuid
+from datetime import datetime
+
+from pydantic import BaseModel
 
 
 class UserRead(BaseModel):
@@ -11,13 +11,13 @@ class UserRead(BaseModel):
     username: str
     email: str
     is_admin: bool
-    active_course_id: Optional[uuid.UUID] = None
-    cefr_level: Optional[str] = None
+    active_course_id: uuid.UUID | None = None
+    cefr_level: str | None = None
     total_xp: int
     hearts: int
     gems: int
     current_streak: int
-    last_activity_at: Optional[datetime] = None
+    last_activity_at: datetime | None = None
     created_at: datetime
 
     class Config:
@@ -27,8 +27,8 @@ class UserRead(BaseModel):
 class UserUpdate(BaseModel):
     """Fields a user can update on their own profile."""
 
-    username: Optional[str] = None
-    email: Optional[str] = None
-    password: Optional[str] = None
-    active_course_id: Optional[uuid.UUID] = None
-    cefr_level: Optional[str] = None
+    username: str | None = None
+    email: str | None = None
+    password: str | None = None
+    active_course_id: uuid.UUID | None = None
+    cefr_level: str | None = None

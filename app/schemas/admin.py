@@ -3,28 +3,30 @@ Admin-facing request/response schemas.
 These are separate from user-facing schemas so write fields
 (e.g., is_admin, order_index) are never accidentally exposed to regular users.
 """
-from typing import Any, Dict, Optional
-from datetime import datetime
-from pydantic import BaseModel, EmailStr
-import uuid
 
+import uuid
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, EmailStr
 
 # ---------------------------------------------------------------------------
 # User admin schemas
 # ---------------------------------------------------------------------------
+
 
 class AdminUserRead(BaseModel):
     id: uuid.UUID
     username: str
     email: str
     is_admin: bool
-    cefr_level: Optional[str] = None
-    total_xp: Optional[int] = 0
-    hearts: Optional[int] = 0
-    gems: Optional[int] = 0
-    current_streak: Optional[int] = 0
-    last_activity_at: Optional[datetime] = None
-    created_at: Optional[datetime] = None
+    cefr_level: str | None = None
+    total_xp: int | None = 0
+    hearts: int | None = 0
+    gems: int | None = 0
+    current_streak: int | None = 0
+    last_activity_at: datetime | None = None
+    created_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -32,18 +34,20 @@ class AdminUserRead(BaseModel):
 
 class AdminUserUpdate(BaseModel):
     """Fields an admin can change on any user account."""
-    username: Optional[str] = None
-    email: Optional[EmailStr] = None
-    cefr_level: Optional[str] = None
-    hearts: Optional[int] = None
-    gems: Optional[int] = None
-    total_xp: Optional[int] = None
-    current_streak: Optional[int] = None
+
+    username: str | None = None
+    email: EmailStr | None = None
+    cefr_level: str | None = None
+    hearts: int | None = None
+    gems: int | None = None
+    total_xp: int | None = None
+    current_streak: int | None = None
 
 
 # ---------------------------------------------------------------------------
 # Course schemas
 # ---------------------------------------------------------------------------
+
 
 class CourseCreate(BaseModel):
     title: str
@@ -51,8 +55,8 @@ class CourseCreate(BaseModel):
 
 
 class CourseUpdate(BaseModel):
-    title: Optional[str] = None
-    expected_cefr_level: Optional[str] = None
+    title: str | None = None
+    expected_cefr_level: str | None = None
 
 
 class CourseReadAdmin(BaseModel):
@@ -68,6 +72,7 @@ class CourseReadAdmin(BaseModel):
 # Unit schemas
 # ---------------------------------------------------------------------------
 
+
 class UnitCreate(BaseModel):
     course_id: uuid.UUID
     title: str
@@ -75,8 +80,8 @@ class UnitCreate(BaseModel):
 
 
 class UnitUpdate(BaseModel):
-    title: Optional[str] = None
-    order_index: Optional[int] = None
+    title: str | None = None
+    order_index: int | None = None
 
 
 class UnitReadAdmin(BaseModel):
@@ -93,6 +98,7 @@ class UnitReadAdmin(BaseModel):
 # Lesson schemas
 # ---------------------------------------------------------------------------
 
+
 class LessonCreate(BaseModel):
     unit_id: uuid.UUID
     lesson_form_id: uuid.UUID
@@ -101,10 +107,10 @@ class LessonCreate(BaseModel):
 
 
 class LessonUpdate(BaseModel):
-    unit_id: Optional[uuid.UUID] = None
-    lesson_form_id: Optional[uuid.UUID] = None
-    title: Optional[str] = None
-    order_index: Optional[int] = None
+    unit_id: uuid.UUID | None = None
+    lesson_form_id: uuid.UUID | None = None
+    title: str | None = None
+    order_index: int | None = None
 
 
 class LessonReadAdmin(BaseModel):
@@ -122,20 +128,21 @@ class LessonReadAdmin(BaseModel):
 # Exercise schemas
 # ---------------------------------------------------------------------------
 
+
 class ExerciseCreate(BaseModel):
     lesson_id: uuid.UUID
     exercise_type_id: uuid.UUID
     order_index: int = 0
-    question_data: Optional[Dict[str, Any]] = None
-    answer_data: Dict[str, Any] = {}
+    question_data: dict[str, Any] | None = None
+    answer_data: dict[str, Any] = {}
 
 
 class ExerciseUpdate(BaseModel):
-    lesson_id: Optional[uuid.UUID] = None
-    exercise_type_id: Optional[uuid.UUID] = None
-    order_index: Optional[int] = None
-    question_data: Optional[Dict[str, Any]] = None
-    answer_data: Optional[Dict[str, Any]] = None
+    lesson_id: uuid.UUID | None = None
+    exercise_type_id: uuid.UUID | None = None
+    order_index: int | None = None
+    question_data: dict[str, Any] | None = None
+    answer_data: dict[str, Any] | None = None
 
 
 class ExerciseReadAdmin(BaseModel):
@@ -143,8 +150,8 @@ class ExerciseReadAdmin(BaseModel):
     lesson_id: uuid.UUID
     exercise_type_id: uuid.UUID
     order_index: int = 0
-    question_data: Optional[Dict[str, Any]] = None
-    answer_data: Dict[str, Any]
+    question_data: dict[str, Any] | None = None
+    answer_data: dict[str, Any]
 
     class Config:
         from_attributes = True

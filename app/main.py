@@ -1,20 +1,22 @@
+import logging
+import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
-import os
-
-import logging
-from contextlib import asynccontextmanager
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import SQLModel
-from app.core.database import _get_engine
-from app.core.config import get_settings
+
 # Import all models so SQLModel metadata is populated
 import app.models  # noqa: F401
 from app.api.v1.router import api_router
+from app.core.config import get_settings
+from app.core.database import _get_engine
 
 logger = logging.getLogger("uvicorn.error")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,16 +31,17 @@ async def lifespan(app: FastAPI):
         )
     yield
 
+
 # ---------------------------------------------------------------------------
 # Tag metadata — controls ordering and descriptions in Swagger UI
 # ---------------------------------------------------------------------------
 TAGS_METADATA = [
-    {"name": "Health",      "description": "Service liveness check."},
-    {"name": "Auth",        "description": "Register and obtain JWT tokens."},
-    {"name": "Users",       "description": "Current user profile operations."},
-    {"name": "Courses",     "description": "Browse available courses and their content tree."},
-    {"name": "Lessons",     "description": "Pre-fetch lesson payloads and submit completions."},
-    {"name": "Exercises",   "description": "Exercise catalogue."},
+    {"name": "Health", "description": "Service liveness check."},
+    {"name": "Auth", "description": "Register and obtain JWT tokens."},
+    {"name": "Users", "description": "Current user profile operations."},
+    {"name": "Courses", "description": "Browse available courses and their content tree."},
+    {"name": "Lessons", "description": "Pre-fetch lesson payloads and submit completions."},
+    {"name": "Exercises", "description": "Exercise catalogue."},
     {
         "name": "Admin — Users",
         "description": "**Admin only.** Full CRUD on user accounts, including role management.",

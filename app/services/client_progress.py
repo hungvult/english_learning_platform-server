@@ -1,5 +1,3 @@
-from typing import List, Optional, Set
-
 from sqlmodel import Session, select
 
 from app.models.course import Course
@@ -19,28 +17,26 @@ from app.schemas.client_progress import (
 
 class ClientProgressService:
     @staticmethod
-    def _resolve_active_course(db: Session, user: User) -> Optional[Course]:
+    def _resolve_active_course(db: Session, user: User) -> Course | None:
         if not user.active_course_id:
             return None
-            
+
         return db.get(Course, user.active_course_id)
 
     @staticmethod
-    def _completed_lesson_ids(db: Session, user_id) -> Set:
+    def _completed_lesson_ids(db: Session, user_id) -> set:
         rows = db.exec(
             select(UserLessonProgress.lesson_id).where(UserLessonProgress.user_id == user_id)
         ).all()
         return set(rows)
 
     @staticmethod
-    def _build_units(
-        db: Session, course_id, completed_lesson_ids: Set
-    ) -> List[UnitSummaryCompat]:
+    def _build_units(db: Session, course_id, completed_lesson_ids: set) -> list[UnitSummaryCompat]:
         units = db.exec(
             select(Unit).where(Unit.course_id == course_id).order_by(Unit.order_index)
         ).all()
 
-        unit_summaries: List[UnitSummaryCompat] = []
+        unit_summaries: list[UnitSummaryCompat] = []
         for unit in units:
             lessons = db.exec(
                 select(Lesson).where(Lesson.unit_id == unit.id).order_by(Lesson.order_index)
@@ -89,7 +85,7 @@ class ClientProgressService:
             streak=user.current_streak,
         )
 
-    def get_active_course_units(self, db: Session, user: User) -> List[UnitSummaryCompat]:
+    def get_active_course_units(self, db: Session, user: User) -> list[UnitSummaryCompat]:
         active_course = self._resolve_active_course(db, user)
         if not active_course:
             return []
@@ -105,10 +101,10 @@ class ClientProgressService:
         completed_lesson_ids = self._completed_lesson_ids(db, user.id)
         units = self._build_units(db, active_course.id, completed_lesson_ids)
 
-        first_lesson: Optional[LessonSummaryCompat] = None
-        first_lesson_unit: Optional[UnitSummaryCompat] = None
-        active_lesson: Optional[LessonSummaryCompat] = None
-        active_lesson_unit: Optional[UnitSummaryCompat] = None
+        first_lesson: LessonSummaryCompat | None = None
+        first_lesson_unit: UnitSummaryCompat | None = None
+        active_lesson: LessonSummaryCompat | None = None
+        active_lesson_unit: UnitSummaryCompat | None = None
 
         for unit in units:
             for lesson in unit.lessons:

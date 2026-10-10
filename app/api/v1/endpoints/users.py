@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
-from app.core.database import get_db
 from app.api.dependencies import require_authenticated_user
+from app.core.database import get_db
 from app.models.user import User
 from app.schemas.client_progress import (
     CourseProgressResponse,

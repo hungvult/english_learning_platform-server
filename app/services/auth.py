@@ -1,9 +1,9 @@
-from sqlmodel import Session
 from fastapi import HTTPException, status
+from sqlmodel import Session
 
-from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse
+from app.core.security import create_access_token, get_password_hash, verify_password
 from app.repositories.user import user_repository
-from app.core.security import get_password_hash, verify_password, create_access_token
+from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
 
 
 class AuthService:

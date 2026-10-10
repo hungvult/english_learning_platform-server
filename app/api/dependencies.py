@@ -1,14 +1,15 @@
+import uuid
+
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlmodel import Session
-import uuid
 
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.security import ALGORITHM
-from app.core.config import get_settings
-from app.repositories.user import user_repository
 from app.models.user import User
+from app.repositories.user import user_repository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 

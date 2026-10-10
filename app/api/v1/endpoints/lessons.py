@@ -1,16 +1,15 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
-from sqlalchemy.orm import selectinload
 import uuid
 
-from app.core.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import selectinload
+from sqlmodel import Session, select
+
 from app.api.dependencies import require_authenticated_user
-from app.models.user import User
-from app.models.lesson import Lesson
+from app.core.database import get_db
 from app.models.exercise import Exercise
+from app.models.lesson import Lesson
 from app.models.unit import Unit
-from app.models.course import Course
+from app.models.user import User
 from app.schemas.exercise import ExerciseClient
 from app.schemas.lesson import LessonPayload
 from app.schemas.progress import LessonSubmission, ProgressResponse
@@ -28,22 +27,19 @@ def _get_active_lesson(db: Session, user: User) -> Lesson:
         )
     # Find the first uncompleted lesson in the active course
     from app.models.user_lesson_progress import UserLessonProgress
+
     completed = db.exec(
         select(UserLessonProgress.lesson_id).where(UserLessonProgress.user_id == user.id)
     ).all()
     completed_ids = set(completed)
 
     units = db.exec(
-        select(Unit)
-        .where(Unit.course_id == user.active_course_id)
-        .order_by(Unit.order_index)
+        select(Unit).where(Unit.course_id == user.active_course_id).order_by(Unit.order_index)
     ).all()
 
     for unit in units:
         lessons = db.exec(
-            select(Lesson)
-            .where(Lesson.unit_id == unit.id)
-            .order_by(Lesson.order_index)
+            select(Lesson).where(Lesson.unit_id == unit.id).order_by(Lesson.order_index)
         ).all()
         for lesson in lessons:
             if lesson.id not in completed_ids:
@@ -53,9 +49,7 @@ def _get_active_lesson(db: Session, user: User) -> Lesson:
     if units:
         last_unit = units[-1]
         last_lesson = db.exec(
-            select(Lesson)
-            .where(Lesson.unit_id == last_unit.id)
-            .order_by(Lesson.order_index.desc())
+            select(Lesson).where(Lesson.unit_id == last_unit.id).order_by(Lesson.order_index.desc())
         ).first()
         if last_lesson:
             return last_lesson
@@ -108,7 +102,7 @@ def get_lesson_payload(
     return lesson_service.build_client_payload(lesson)
 
 
-@router.get("/{lesson_id}/exercises", response_model=List[ExerciseClient])
+@router.get("/{lesson_id}/exercises", response_model=list[ExerciseClient])
 def get_lesson_exercises(
     lesson_id: uuid.UUID,
     db: Session = Depends(get_db),
@@ -119,9 +113,6 @@ def get_lesson_exercises(
     Use for on-demand fetching when the full payload is not cached.
     """
     return lesson_service.get_exercises_for_lesson(db, lesson_id)
-
-
-
 
 
 @router.post("/{lesson_id}/submit", response_model=ProgressResponse)

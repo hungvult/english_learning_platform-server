@@ -1,4 +1,5 @@
 from sqlmodel import Session, create_engine
+
 from app.core.config import get_settings
 
 # Lazy engine initialization to avoid import-time failures

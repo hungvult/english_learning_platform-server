@@ -1,7 +1,7 @@
-from typing import List
-from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Unicode
 import uuid
+
+from sqlalchemy import Unicode
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class LessonForm(SQLModel, table=True):
@@ -10,7 +10,7 @@ class LessonForm(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(sa_type=Unicode(100))  # 'new knowledge', 'review', 'test'
 
-    lessons: List["Lesson"] = Relationship(back_populates="lesson_form")
+    lessons: list["Lesson"] = Relationship(back_populates="lesson_form")
 
 
 class Lesson(SQLModel, table=True):
@@ -24,6 +24,6 @@ class Lesson(SQLModel, table=True):
 
     unit: "Unit" = Relationship(back_populates="lessons")
     lesson_form: LessonForm = Relationship(back_populates="lessons")
-    exercises: List["Exercise"] = Relationship(back_populates="lesson")
-    lesson_progress: List["UserLessonProgress"] = Relationship(back_populates="lesson")
-    exercise_logs: List["UserExerciseLog"] = Relationship(back_populates="lesson")
+    exercises: list["Exercise"] = Relationship(back_populates="lesson")
+    lesson_progress: list["UserLessonProgress"] = Relationship(back_populates="lesson")
+    exercise_logs: list["UserExerciseLog"] = Relationship(back_populates="lesson")

@@ -1,19 +1,20 @@
 """Admin endpoints: lesson management."""
-from typing import List
-from fastapi import APIRouter, Body, Depends, HTTPException, status
-from sqlmodel import Session, select
+
 import uuid
 
-from app.core.database import get_db
+from fastapi import APIRouter, Body, Depends, HTTPException, status
+from sqlmodel import Session, select
+
 from app.api.dependencies import require_admin
-from app.models.user import User
+from app.core.database import get_db
 from app.models.lesson import Lesson
-from app.schemas.admin import LessonCreate, LessonUpdate, LessonReadAdmin
+from app.models.user import User
+from app.schemas.admin import LessonCreate, LessonReadAdmin, LessonUpdate
 
 router = APIRouter()
 
 
-@router.get("/", response_model=List[LessonReadAdmin], summary="List lessons")
+@router.get("/", response_model=list[LessonReadAdmin], summary="List lessons")
 def list_lessons(
     unit_id: uuid.UUID | None = None,
     skip: int = 0,
@@ -28,7 +29,12 @@ def list_lessons(
     return db.exec(stmt.offset(skip).limit(limit)).all()
 
 
-@router.post("/", response_model=LessonReadAdmin, status_code=status.HTTP_201_CREATED, summary="Create lesson")
+@router.post(
+    "/",
+    response_model=LessonReadAdmin,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create lesson",
+)
 def create_lesson(
     payload: LessonCreate,
     db: Session = Depends(get_db),
@@ -84,7 +90,11 @@ def delete_lesson(
     db.commit()
 
 
-@router.post("/swap-order", response_model=List[LessonReadAdmin], summary="Swap order_index between two lessons")
+@router.post(
+    "/swap-order",
+    response_model=list[LessonReadAdmin],
+    summary="Swap order_index between two lessons",
+)
 def swap_lesson_order(
     id_a: uuid.UUID = Body(...),
     id_b: uuid.UUID = Body(...),
@@ -95,9 +105,13 @@ def swap_lesson_order(
     lesson_a = db.get(Lesson, id_a)
     lesson_b = db.get(Lesson, id_b)
     if not lesson_a:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Lesson {id_a} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Lesson {id_a} not found"
+        )
     if not lesson_b:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Lesson {id_b} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Lesson {id_b} not found"
+        )
 
     lesson_a.order_index, lesson_b.order_index = lesson_b.order_index, lesson_a.order_index
     db.add(lesson_a)

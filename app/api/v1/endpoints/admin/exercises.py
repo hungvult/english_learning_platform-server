@@ -1,24 +1,26 @@
 """Admin endpoints: exercise management."""
-from pathlib import Path
-from typing import List
-from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile, status
-from sqlmodel import Session, select
+
 import json
 import uuid
+from pathlib import Path
 
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import delete, func
-from app.core.database import get_db
+from sqlmodel import Session, select
+
 from app.api.dependencies import require_admin
-from app.models.user import User
+from app.core.database import get_db
 from app.models.exercise import Exercise
+from app.models.user import User
 from app.models.user_exercise_log import UserExerciseLog
 from app.schemas.admin import (
     ExerciseCreate,
-    ExerciseUpdate,
-    ExerciseReadAdmin,
     ExerciseDependencySummary,
+    ExerciseReadAdmin,
+    ExerciseUpdate,
     MistakeAnalytics,
 )
+from app.services.exercise_validation import validate_exercise_payload
 
 router = APIRouter()
 
@@ -67,7 +69,7 @@ def _serialize(exercise: Exercise) -> ExerciseReadAdmin:
     )
 
 
-@router.get("/", response_model=List[ExerciseReadAdmin], summary="List exercises")
+@router.get("/", response_model=list[ExerciseReadAdmin], summary="List exercises")
 def list_exercises(
     lesson_id: uuid.UUID | None = None,
     skip: int = 0,
@@ -122,7 +124,9 @@ async def upload_image(
     }
 
 
-@router.delete("/delete-image", status_code=status.HTTP_204_NO_CONTENT, summary="Delete uploaded image")
+@router.delete(
+    "/delete-image", status_code=status.HTTP_204_NO_CONTENT, summary="Delete uploaded image"
+)
 def delete_image(
     image_url: str = Query(..., description="images/<filename> or /static/images/<filename>"),
     _: User = Depends(require_admin),
@@ -140,9 +144,12 @@ def delete_image(
     target_path.unlink()
 
 
-from app.services.exercise_validation import validate_exercise_payload
-
-@router.post("/", response_model=ExerciseReadAdmin, status_code=status.HTTP_201_CREATED, summary="Create exercise")
+@router.post(
+    "/",
+    response_model=ExerciseReadAdmin,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create exercise",
+)
 def create_exercise(
     payload: ExerciseCreate,
     db: Session = Depends(get_db),
@@ -203,7 +210,9 @@ def update_exercise(
         safe_q, safe_a = validate_exercise_payload(db, target_type_id, q_data_raw, a_data_raw)
 
         if "question_data" in update_data:
-            update_data["question_data"] = json.dumps(safe_q, ensure_ascii=False) if safe_q is not None else None
+            update_data["question_data"] = (
+                json.dumps(safe_q, ensure_ascii=False) if safe_q is not None else None
+            )
         if "answer_data" in update_data:
             update_data["answer_data"] = json.dumps(safe_a, ensure_ascii=False)
 
@@ -267,7 +276,11 @@ def get_exercise_dependencies(
     )
 
 
-@router.post("/swap-order", response_model=List[ExerciseReadAdmin], summary="Swap order_index between two exercises")
+@router.post(
+    "/swap-order",
+    response_model=list[ExerciseReadAdmin],
+    summary="Swap order_index between two exercises",
+)
 def swap_exercise_order(
     id_a: uuid.UUID = Body(...),
     id_b: uuid.UUID = Body(...),
@@ -278,9 +291,13 @@ def swap_exercise_order(
     ex_a = db.get(Exercise, id_a)
     ex_b = db.get(Exercise, id_b)
     if not ex_a:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Exercise {id_a} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Exercise {id_a} not found"
+        )
     if not ex_b:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Exercise {id_b} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Exercise {id_b} not found"
+        )
 
     ex_a.order_index, ex_b.order_index = ex_b.order_index, ex_a.order_index
     db.add(ex_a)
@@ -291,7 +308,11 @@ def swap_exercise_order(
     return [_serialize(ex_a), _serialize(ex_b)]
 
 
-@router.get("/{exercise_id}/logs", response_model=List[MistakeAnalytics], summary="Get common mistaken answers for exercise")
+@router.get(
+    "/{exercise_id}/logs",
+    response_model=list[MistakeAnalytics],
+    summary="Get common mistaken answers for exercise",
+)
 def get_exercise_logs(
     exercise_id: uuid.UUID,
     db: Session = Depends(get_db),
@@ -302,19 +323,13 @@ def get_exercise_logs(
     Useful for admins to track user mistakes and improve question clarity.
     """
     stmt = (
-        select(
-            UserExerciseLog.user_answer,
-            func.count(UserExerciseLog.id).label("count")
-        )
+        select(UserExerciseLog.user_answer, func.count(UserExerciseLog.id).label("count"))
         .where(UserExerciseLog.exercise_id == exercise_id)
-        .where(UserExerciseLog.is_correct == False)
+        .where(UserExerciseLog.is_correct.is_(False))
         .group_by(UserExerciseLog.user_answer)
         .order_by(func.count(UserExerciseLog.id).desc())
     )
 
     rows = db.exec(stmt).all()
 
-    return [
-        MistakeAnalytics(user_answer=row[0], count=row[1])
-        for row in rows
-    ]
+    return [MistakeAnalytics(user_answer=row[0], count=row[1]) for row in rows]

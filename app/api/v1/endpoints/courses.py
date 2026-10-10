@@ -1,8 +1,8 @@
-from typing import List, Optional
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import Session
-import uuid
 
 from app.api.dependencies import require_authenticated_user
 from app.core.database import get_db
@@ -22,8 +22,8 @@ class CourseClientResponse(BaseModel):
 
 
 class UserCoursesResponse(BaseModel):
-    activeCourseId: Optional[str] = None
-    courses: List[CourseClientResponse]
+    activeCourseId: str | None = None
+    courses: list[CourseClientResponse]
 
 
 @router.get("/me", response_model=UserCoursesResponse)
@@ -36,15 +36,19 @@ def get_user_courses(
 
     client_courses = []
     for c in courses:
-        client_courses.append({
-            "id": str(c.id),
-            "title": c.title,
-            "imageSrc": "/us_flag.webp",
-        })
+        client_courses.append(
+            {
+                "id": str(c.id),
+                "title": c.title,
+                "imageSrc": "/us_flag.webp",
+            }
+        )
 
     return {
-        "activeCourseId": str(current_user.active_course_id) if current_user.active_course_id else None,
-        "courses": client_courses
+        "activeCourseId": str(current_user.active_course_id)
+        if current_user.active_course_id
+        else None,
+        "courses": client_courses,
     }
 
 
@@ -67,14 +71,13 @@ def select_course(
     return {"status": "success"}
 
 
-
-@router.get("/", response_model=List[CourseRead])
+@router.get("/", response_model=list[CourseRead])
 def list_courses(db: Session = Depends(get_db)):
     """List all available courses."""
     return course_service.list_courses(db)
 
 
-@router.get("/active/units", response_model=List[UnitSummaryCompat])
+@router.get("/active/units", response_model=list[UnitSummaryCompat])
 def list_active_course_units(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_authenticated_user),

@@ -1,13 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlmodel import Session
 
 from app.core.database import get_db
-from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse
+from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
 from app.services.auth import auth_service
 
 router = APIRouter()
-
-from fastapi import Response
 
 
 @router.post("/register", response_model=TokenResponse, status_code=201)

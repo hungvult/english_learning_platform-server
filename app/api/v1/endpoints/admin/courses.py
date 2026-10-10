@@ -1,19 +1,20 @@
 """Admin endpoints: course management."""
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session
+
 import uuid
 
-from app.core.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlmodel import Session
+
 from app.api.dependencies import require_admin
-from app.models.user import User
+from app.core.database import get_db
 from app.models.course import Course
-from app.schemas.admin import CourseCreate, CourseUpdate, CourseReadAdmin
+from app.models.user import User
+from app.schemas.admin import CourseCreate, CourseReadAdmin, CourseUpdate
 
 router = APIRouter()
 
 
-@router.get("/", response_model=List[CourseReadAdmin], summary="List all courses")
+@router.get("/", response_model=list[CourseReadAdmin], summary="List all courses")
 def list_courses(
     skip: int = 0,
     limit: int = 100,
@@ -21,10 +22,16 @@ def list_courses(
     _: User = Depends(require_admin),
 ):
     from sqlmodel import select
+
     return db.exec(select(Course).order_by(Course.id).offset(skip).limit(limit)).all()
 
 
-@router.post("/", response_model=CourseReadAdmin, status_code=status.HTTP_201_CREATED, summary="Create course")
+@router.post(
+    "/",
+    response_model=CourseReadAdmin,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create course",
+)
 def create_course(
     payload: CourseCreate,
     db: Session = Depends(get_db),

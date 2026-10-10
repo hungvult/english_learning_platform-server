@@ -1,18 +1,18 @@
-from typing import List
-from fastapi import APIRouter, Body, Depends, HTTPException, status
-from sqlmodel import Session, select
 import uuid
 
-from app.core.database import get_db
+from fastapi import APIRouter, Body, Depends, HTTPException, status
+from sqlmodel import Session, select
+
 from app.api.dependencies import require_admin
-from app.models.user import User
+from app.core.database import get_db
 from app.models.unit import Unit
-from app.schemas.admin import UnitCreate, UnitUpdate, UnitReadAdmin
+from app.models.user import User
+from app.schemas.admin import UnitCreate, UnitReadAdmin, UnitUpdate
 
 router = APIRouter()
 
 
-@router.get("/", response_model=List[UnitReadAdmin], summary="List units")
+@router.get("/", response_model=list[UnitReadAdmin], summary="List units")
 def list_units(
     course_id: uuid.UUID | None = None,
     skip: int = 0,
@@ -27,7 +27,9 @@ def list_units(
     return db.exec(stmt.offset(skip).limit(limit)).all()
 
 
-@router.post("/", response_model=UnitReadAdmin, status_code=status.HTTP_201_CREATED, summary="Create unit")
+@router.post(
+    "/", response_model=UnitReadAdmin, status_code=status.HTTP_201_CREATED, summary="Create unit"
+)
 def create_unit(
     payload: UnitCreate,
     db: Session = Depends(get_db),
@@ -83,7 +85,9 @@ def delete_unit(
     db.commit()
 
 
-@router.post("/swap-order", response_model=List[UnitReadAdmin], summary="Swap order_index between two units")
+@router.post(
+    "/swap-order", response_model=list[UnitReadAdmin], summary="Swap order_index between two units"
+)
 def swap_unit_order(
     id_a: uuid.UUID = Body(...),
     id_b: uuid.UUID = Body(...),

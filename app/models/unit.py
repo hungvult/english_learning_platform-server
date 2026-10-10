@@ -1,7 +1,7 @@
-from typing import List
-from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Unicode
 import uuid
+
+from sqlalchemy import Unicode
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class Unit(SQLModel, table=True):
@@ -13,4 +13,4 @@ class Unit(SQLModel, table=True):
     order_index: int
 
     course: "Course" = Relationship(back_populates="units")
-    lessons: List["Lesson"] = Relationship(back_populates="unit")
+    lessons: list["Lesson"] = Relationship(back_populates="unit")

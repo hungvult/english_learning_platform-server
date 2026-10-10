@@ -1,16 +1,17 @@
 import json
-from typing import Any, Dict, List
+import uuid
+from typing import Any
 
 from sqlalchemy import Column, Unicode, UnicodeText
 from sqlalchemy.types import TypeDecorator
-from sqlmodel import SQLModel, Field, Relationship
-import uuid
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class JSONString(TypeDecorator):
     """Store a Python dict as a JSON string in an NVARCHAR(MAX) column.
     Required for SQL Server which has no native JSON column type.
     """
+
     impl = UnicodeText
     cache_ok = True
 
@@ -38,7 +39,7 @@ class ExerciseType(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(sa_type=Unicode(100))  # e.g. COMPLETE_CONVERSATION, ARRANGE_WORDS …
 
-    exercises: List["Exercise"] = Relationship(back_populates="exercise_type")
+    exercises: list["Exercise"] = Relationship(back_populates="exercise_type")
 
 
 class Exercise(SQLModel, table=True):
@@ -49,15 +50,15 @@ class Exercise(SQLModel, table=True):
     exercise_type_id: uuid.UUID = Field(foreign_key="ExerciseTypes.id")
     order_index: int = Field(default=0)
 
-    question_data: Dict[str, Any] | None = Field(
+    question_data: dict[str, Any] | None = Field(
         default=None,
         sa_column=Column(JSONString()),
     )
-    answer_data: Dict[str, Any] = Field(
+    answer_data: dict[str, Any] = Field(
         default_factory=dict,
         sa_column=Column(JSONString()),
     )
 
     lesson: "Lesson" = Relationship(back_populates="exercises")
     exercise_type: ExerciseType = Relationship(back_populates="exercises")
-    logs: List["UserExerciseLog"] = Relationship(back_populates="exercise")
+    logs: list["UserExerciseLog"] = Relationship(back_populates="exercise")

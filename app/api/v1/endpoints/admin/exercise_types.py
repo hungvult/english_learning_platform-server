@@ -1,5 +1,4 @@
 """Admin endpoints: exercise type lookup."""
-from typing import List
 
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
@@ -13,7 +12,7 @@ from app.schemas.admin import ExerciseTypeReadAdmin
 router = APIRouter()
 
 
-@router.get("/", response_model=List[ExerciseTypeReadAdmin], summary="List exercise types")
+@router.get("/", response_model=list[ExerciseTypeReadAdmin], summary="List exercise types")
 def list_exercise_types(
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),

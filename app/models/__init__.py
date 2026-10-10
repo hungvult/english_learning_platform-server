@@ -1,11 +1,11 @@
 # Re-export all models for convenient imports and Alembic discovery
-from .user import User
 from .course import Course
-from .unit import Unit
-from .lesson import Lesson, LessonForm
 from .exercise import Exercise, ExerciseType
-from .user_lesson_progress import UserLessonProgress
+from .lesson import Lesson, LessonForm
+from .unit import Unit
+from .user import User
 from .user_exercise_log import UserExerciseLog
+from .user_lesson_progress import UserLessonProgress
 
 __all__ = [
     "User",
@@ -16,5 +16,5 @@ __all__ = [
     "Exercise",
     "ExerciseType",
     "UserLessonProgress",
-    "UserExerciseLog"
+    "UserExerciseLog",
 ]

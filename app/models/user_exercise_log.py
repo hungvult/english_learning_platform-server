@@ -1,7 +1,9 @@
-from datetime import datetime, timezone
 import uuid
+from datetime import UTC, datetime
+
 from sqlalchemy import UnicodeText
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
+
 
 class UserExerciseLog(SQLModel, table=True):
     __tablename__ = "UserExerciseLog"
@@ -15,7 +17,7 @@ class UserExerciseLog(SQLModel, table=True):
     user_answer: str = Field(sa_type=UnicodeText)
     is_correct: bool
 
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # Relationships
     user: "User" = Relationship(back_populates="exercise_logs")

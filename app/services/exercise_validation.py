@@ -1,11 +1,12 @@
 import re
 import uuid
-from fastapi import HTTPException, status
-from sqlmodel import Session
-from pydantic import ValidationError
 
-from app.models.exercise import ExerciseType
+from fastapi import HTTPException, status
+from pydantic import ValidationError
+from sqlmodel import Session
+
 import app.schemas.exercise_types as ext
+from app.models.exercise import ExerciseType
 
 QUESTION_SCHEMA_MAP = {
     "COMPLETE_CONVERSATION": ext.CompleteConversationQuestion,
@@ -25,7 +26,10 @@ ANSWER_SCHEMA_MAP = {
     "SPEAK_SENTENCE": ext.SpeakSentenceAnswer,
 }
 
-def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question_data: dict | None, answer_data: dict | None) -> tuple[dict | None, dict]:
+
+def validate_exercise_payload(
+    db: Session, exercise_type_id: uuid.UUID, question_data: dict | None, answer_data: dict | None
+) -> tuple[dict | None, dict]:
     """
     Validates the dynamic JSON payloads for Exercises based on strict domain rules.
     1. Looks up the human-readable string type (e.g., COMPLETE_CONVERSATION)
@@ -36,7 +40,7 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
     if not exercise_type:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"ExerciseType {exercise_type_id} does not exist"
+            detail=f"ExerciseType {exercise_type_id} does not exist",
         )
 
     type_name = exercise_type.name
@@ -46,7 +50,7 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
         if question_data is not None:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"question_data must be null for {type_name}"
+                detail=f"question_data must be null for {type_name}",
             )
         q_dict = None
         q_obj = None
@@ -54,7 +58,7 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
         if question_data is None:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"question_data cannot be null for {type_name}"
+                detail=f"question_data cannot be null for {type_name}",
             )
 
         # 2. Base Pydantic Validation for Question
@@ -62,7 +66,7 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
         if not q_schema:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"No logic mapping defined for {type_name} question"
+                detail=f"No logic mapping defined for {type_name} question",
             )
         try:
             q_obj = q_schema.model_validate(question_data)
@@ -82,31 +86,24 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
                     raise HTTPException(422, "word_bank array must have a minimum length of 2")
 
         except ValidationError as e:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=e.errors()
-            )
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.errors())
 
     # 3. Base Pydantic Validation for Answer
     if answer_data is None:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="answer_data cannot be null"
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="answer_data cannot be null"
         )
     a_schema = ANSWER_SCHEMA_MAP.get(type_name)
     if not a_schema:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"No logic mapping defined for {type_name} answer"
+            detail=f"No logic mapping defined for {type_name} answer",
         )
     try:
         a_obj = a_schema.model_validate(answer_data)
         a_dict = a_obj.model_dump()
     except ValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=e.errors()
-        )
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.errors())
 
     # 4. Cross-field Business Logic Inter-dependencies
     if type_name in ("COMPLETE_CONVERSATION", "PICTURE_MATCH"):
@@ -114,7 +111,7 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
         if a_obj.correct_option_id not in valid_ids:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"correct_option_id '{a_obj.correct_option_id}' does not exactly match any id present in question_data.options"
+                detail=f"correct_option_id '{a_obj.correct_option_id}' does not exactly match any id present in question_data.options",
             )
 
     if type_name == "PICTURE_MATCH":
@@ -123,7 +120,7 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
             if not image_url:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="image_url cannot be empty for PICTURE_MATCH options"
+                    detail="image_url cannot be empty for PICTURE_MATCH options",
                 )
 
             is_allowed_image_path = (
@@ -140,7 +137,7 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
                     detail=(
                         "PICTURE_MATCH image_url must start with images/, /static/images/, "
                         "http://, https://, or /media/"
-                    )
+                    ),
                 )
 
     elif type_name == "COMPLETE_TRANSLATION":
@@ -148,14 +145,14 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
         if len(placeholders) != len(a_obj.correct_words):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Length of correct_words ({len(a_obj.correct_words)}) must precisely equal the count of unique placeholders ({len(placeholders)}) in text_template"
+                detail=f"Length of correct_words ({len(a_obj.correct_words)}) must precisely equal the count of unique placeholders ({len(placeholders)}) in text_template",
             )
 
     elif type_name == "ARRANGE_WORDS":
         if len(a_obj.correct_sequence) == 0:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="correct_sequence cannot be empty"
+                detail="correct_sequence cannot be empty",
             )
         # Check subset or exact match
         token_counts = {}
@@ -170,21 +167,21 @@ def validate_exercise_payload(db: Session, exercise_type_id: uuid.UUID, question
             if token_counts.get(word, 0) < count:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Word '{word}' appears in correct_sequence more times than it exists in tokens, or does not exist at all"
+                    detail=f"Word '{word}' appears in correct_sequence more times than it exists in tokens, or does not exist at all",
                 )
 
     elif type_name == "LISTEN_FILL":
         if len(a_obj.correct_sequence_ids) == 0:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="correct_sequence_ids cannot be empty"
+                detail="correct_sequence_ids cannot be empty",
             )
         valid_ids = {item.id for item in q_obj.word_bank}
         for expected_id in a_obj.correct_sequence_ids:
             if expected_id not in valid_ids:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"correct_sequence_ids element '{expected_id}' does not match any id in question_data.word_bank"
+                    detail=f"correct_sequence_ids element '{expected_id}' does not match any id in question_data.word_bank",
                 )
 
     return q_dict, a_dict

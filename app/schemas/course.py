@@ -1,6 +1,6 @@
-from typing import List, Optional
-from pydantic import BaseModel
 import uuid
+
+from pydantic import BaseModel
 
 
 class CourseRead(BaseModel):
@@ -36,8 +36,8 @@ class LessonBrief(BaseModel):
 
 
 class UnitWithLessons(UnitRead):
-    lessons: List[LessonBrief] = []
+    lessons: list[LessonBrief] = []
 
 
 class CourseWithUnits(CourseRead):
-    units: List[UnitWithLessons] = []
+    units: list[UnitWithLessons] = []

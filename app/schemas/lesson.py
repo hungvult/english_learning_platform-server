@@ -1,6 +1,6 @@
-from typing import List
-from pydantic import BaseModel
 import uuid
+
+from pydantic import BaseModel
 
 from app.schemas.exercise import ExerciseClient
 
@@ -22,4 +22,4 @@ class LessonPayload(LessonRead):
     (Hybrid Client/Server Validation Architecture per Specification §6).
     """
 
-    exercises: List[ExerciseClient] = []
+    exercises: list[ExerciseClient] = []

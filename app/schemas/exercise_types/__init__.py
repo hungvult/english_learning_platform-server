@@ -6,22 +6,25 @@ AnswerData models are only sent to admin/evaluation.
 
 from __future__ import annotations
 
-from typing import Annotated, List, Literal, Union
-from pydantic import BaseModel
+from typing import Annotated, Literal
 
+from pydantic import BaseModel, Field
 
 # ---------------------------------------------------------------------------
 # Shared option primitives
 # ---------------------------------------------------------------------------
 
+
 class OptionText(BaseModel):
     """A selectable text option."""
+
     id: str
     text: str
 
 
 class OptionImage(BaseModel):
     """A selectable option with an image."""
+
     id: str
     text: str
     image_url: str
@@ -36,9 +39,10 @@ class WordBankItem(BaseModel):
 # COMPLETE_CONVERSATION
 # ---------------------------------------------------------------------------
 
+
 class CompleteConversationQuestion(BaseModel):
-    text: str                    # The prompt / dialogue line
-    options: List[OptionText]
+    text: str  # The prompt / dialogue line
+    options: list[OptionText]
 
 
 class CompleteConversationAnswer(BaseModel):
@@ -55,12 +59,13 @@ class CompleteConversationExercise(BaseModel):
 # ARRANGE_WORDS
 # ---------------------------------------------------------------------------
 
+
 class ArrangeWordsQuestion(BaseModel):
-    tokens: List[str]            # Shuffled word tokens to arrange
+    tokens: list[str]  # Shuffled word tokens to arrange
 
 
 class ArrangeWordsAnswer(BaseModel):
-    correct_sequence: List[str]
+    correct_sequence: list[str]
 
 
 class ArrangeWordsExercise(BaseModel):
@@ -73,13 +78,14 @@ class ArrangeWordsExercise(BaseModel):
 # COMPLETE_TRANSLATION
 # ---------------------------------------------------------------------------
 
+
 class CompleteTranslationQuestion(BaseModel):
-    source_sentence: str         # Original sentence shown to user
-    text_template: str           # Template with {0}, {1} … blanks
+    source_sentence: str  # Original sentence shown to user
+    text_template: str  # Template with {0}, {1} … blanks
 
 
 class CompleteTranslationAnswer(BaseModel):
-    correct_words: List[str]     # Words that fill the blanks in order
+    correct_words: list[str]  # Words that fill the blanks in order
 
 
 class CompleteTranslationExercise(BaseModel):
@@ -92,9 +98,10 @@ class CompleteTranslationExercise(BaseModel):
 # PICTURE_MATCH
 # ---------------------------------------------------------------------------
 
+
 class PictureMatchQuestion(BaseModel):
-    word: str                    # Word or phrase to match
-    options: List[OptionImage]
+    word: str  # Word or phrase to match
+    options: list[OptionImage]
 
 
 class PictureMatchAnswer(BaseModel):
@@ -111,6 +118,7 @@ class PictureMatchExercise(BaseModel):
 # TYPE_HEAR  (listen, then type what you hear)
 # ---------------------------------------------------------------------------
 
+
 class TypeHearAnswer(BaseModel):
     correct_transcription: str
 
@@ -125,13 +133,14 @@ class TypeHearExercise(BaseModel):
 # LISTEN_FILL  (play audio, pick words from bank)
 # ---------------------------------------------------------------------------
 
+
 class ListenFillQuestion(BaseModel):
-    text: str                    # Sentence to convert to TTS audio
-    word_bank: List[WordBankItem]
+    text: str  # Sentence to convert to TTS audio
+    word_bank: list[WordBankItem]
 
 
 class ListenFillAnswer(BaseModel):
-    correct_sequence_ids: List[str]  # Ordered IDs that match the audio
+    correct_sequence_ids: list[str]  # Ordered IDs that match the audio
 
 
 class ListenFillExercise(BaseModel):
@@ -144,12 +153,13 @@ class ListenFillExercise(BaseModel):
 # SPEAK_SENTENCE
 # ---------------------------------------------------------------------------
 
+
 class SpeakSentenceQuestion(BaseModel):
     pass
 
 
 class SpeakSentenceAnswer(BaseModel):
-    expected_text: str           # Used for STT comparison
+    expected_text: str  # Used for STT comparison
 
 
 class SpeakSentenceExercise(BaseModel):
@@ -162,19 +172,15 @@ class SpeakSentenceExercise(BaseModel):
 # Discriminated union — use as the single validator
 # ---------------------------------------------------------------------------
 
-from pydantic import Field
-
 ExerciseVariant = Annotated[
-    Union[
-        CompleteConversationExercise,
-        ArrangeWordsExercise,
-        CompleteTranslationExercise,
-        PictureMatchExercise,
-        TypeHearExercise,
-        ListenFillExercise,
-        SpeakSentenceExercise,
-    ],
-    Field(discriminator="type")
+    CompleteConversationExercise
+    | ArrangeWordsExercise
+    | CompleteTranslationExercise
+    | PictureMatchExercise
+    | TypeHearExercise
+    | ListenFillExercise
+    | SpeakSentenceExercise,
+    Field(discriminator="type"),
 ]
 
 EXERCISE_TYPE_NAMES = [

@@ -1,6 +1,6 @@
-from typing import List, Optional
-from pydantic import BaseModel
 import uuid
+
+from pydantic import BaseModel
 
 
 class CourseCompact(BaseModel):
@@ -11,7 +11,7 @@ class CourseCompact(BaseModel):
 
 class UserProgressResponse(BaseModel):
     userId: uuid.UUID
-    activeCourse: Optional[CourseCompact] = None
+    activeCourse: CourseCompact | None = None
     hearts: int
     points: int
     streak: int
@@ -30,7 +30,7 @@ class UnitSummaryCompat(BaseModel):
     title: str
     description: str
     order: int
-    lessons: List[LessonSummaryCompat]
+    lessons: list[LessonSummaryCompat]
 
 
 class ActiveLessonCompat(LessonSummaryCompat):
@@ -38,5 +38,5 @@ class ActiveLessonCompat(LessonSummaryCompat):
 
 
 class CourseProgressResponse(BaseModel):
-    activeLesson: Optional[ActiveLessonCompat] = None
+    activeLesson: ActiveLessonCompat | None = None
     activeLessonPercentage: int

@@ -1,11 +1,12 @@
 """Admin endpoints: user management."""
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+
 import uuid
 
-from app.core.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlmodel import Session, select
+
 from app.api.dependencies import require_admin
+from app.core.database import get_db
 from app.models.user import User
 from app.schemas.admin import AdminUserRead, AdminUserUpdate
 
@@ -28,7 +29,7 @@ def _to_admin_user_read(user: User) -> AdminUserRead:
     )
 
 
-@router.get("/", response_model=List[AdminUserRead], summary="List all users")
+@router.get("/", response_model=list[AdminUserRead], summary="List all users")
 def list_users(
     skip: int = 0,
     limit: int = 100,

@@ -1,7 +1,7 @@
-from typing import List, Optional
-from datetime import datetime
-from pydantic import BaseModel
 import uuid
+from datetime import datetime
+
+from pydantic import BaseModel
 
 
 class AnswerDetail(BaseModel):
@@ -19,11 +19,11 @@ class LessonSubmission(BaseModel):
     exercises in a lesson (see Specification section 6.4).
     """
 
-    answers: List[AnswerDetail]
+    answers: list[AnswerDetail]
     score: int
     hearts_left: int
-    started_at: Optional[datetime] = None
-    finished_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
 
 
 class ProgressResponse(BaseModel):

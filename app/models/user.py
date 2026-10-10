@@ -1,8 +1,8 @@
-from typing import Optional, List
-from datetime import datetime, timezone
-from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import String, Unicode
 import uuid
+from datetime import UTC, datetime
+
+from sqlalchemy import String, Unicode
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class User(SQLModel, table=True):
@@ -13,14 +13,14 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True, index=True, sa_type=Unicode(254))
     hashed_password: str = Field(sa_type=String(255))
     is_admin: bool = Field(default=False)
-    active_course_id: Optional[uuid.UUID] = Field(default=None, foreign_key="Courses.id")
-    cefr_level: Optional[str] = Field(default=None, max_length=2)
+    active_course_id: uuid.UUID | None = Field(default=None, foreign_key="Courses.id")
+    cefr_level: str | None = Field(default=None, max_length=2)
     total_xp: int = Field(default=0)
     hearts: int = Field(default=5)
     gems: int = Field(default=0)
     current_streak: int = Field(default=0)
-    last_activity_at: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_activity_at: datetime | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    lesson_progress: List["UserLessonProgress"] = Relationship(back_populates="user")
-    exercise_logs: List["UserExerciseLog"] = Relationship(back_populates="user")
+    lesson_progress: list["UserLessonProgress"] = Relationship(back_populates="user")
+    exercise_logs: list["UserExerciseLog"] = Relationship(back_populates="user")

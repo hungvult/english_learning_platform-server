@@ -1,27 +1,26 @@
-from datetime import datetime, timezone
-from typing import List, Optional
-from sqlmodel import Session
-from fastapi import HTTPException, status
 import uuid
+from datetime import UTC, datetime
 
+from fastapi import HTTPException, status
+from sqlmodel import Session
+
+from app.models.exercise import Exercise
 from app.models.lesson import Lesson
-from app.models.exercise import Exercise, ExerciseType
 from app.models.user import User
-from app.models.user_lesson_progress import UserLessonProgress
 from app.models.user_exercise_log import UserExerciseLog
+from app.models.user_lesson_progress import UserLessonProgress
+from app.repositories.exercise import exercise_repository
+from app.repositories.lesson import lesson_repository
 from app.schemas.exercise import ExerciseClient
 from app.schemas.lesson import LessonPayload
 from app.schemas.progress import LessonSubmission, ProgressResponse
-from app.repositories.lesson import lesson_repository
-from app.repositories.exercise import exercise_repository
-
 
 # XP reward tiers based on accuracy percentage
 XP_TIERS = [
-    (1.0, 20),   # 100% accuracy → 20 XP
-    (0.8, 15),   # 80%+ → 15 XP
-    (0.5, 10),   # 50%+ → 10 XP
-    (0.0, 5),    # any completion → 5 XP
+    (1.0, 20),  # 100% accuracy → 20 XP
+    (0.8, 15),  # 80%+ → 15 XP
+    (0.5, 10),  # 50%+ → 10 XP
+    (0.0, 5),  # any completion → 5 XP
 ]
 
 
@@ -71,9 +70,7 @@ class LessonService:
         self.repository = lesson_repository
         self.exercise_repository = exercise_repository
 
-    def get_lesson_payload(
-        self, db: Session, lesson_id: uuid.UUID
-    ) -> Optional[Lesson]:
+    def get_lesson_payload(self, db: Session, lesson_id: uuid.UUID) -> Lesson | None:
         """Full lesson with exercises for client pre-fetch.
         Each exercise includes the type name but NOT answer_data.
         """
@@ -81,7 +78,7 @@ class LessonService:
 
     def build_client_payload(self, lesson: Lesson) -> LessonPayload:
         """Convert ORM Lesson → LessonPayload with typed ExerciseClient items."""
-        exercises: List[ExerciseClient] = []
+        exercises: list[ExerciseClient] = []
         for ex in lesson.exercises:
             type_name = ex.exercise_type.name if ex.exercise_type else "UNKNOWN"
             exercises.append(
@@ -103,9 +100,7 @@ class LessonService:
             exercises=exercises,
         )
 
-    def get_exercises_for_lesson(
-        self, db: Session, lesson_id: uuid.UUID
-    ) -> List[ExerciseClient]:
+    def get_exercises_for_lesson(self, db: Session, lesson_id: uuid.UUID) -> list[ExerciseClient]:
         """Return exercises for a lesson without answer_data (client mode)."""
         exercises = self.exercise_repository.get_by_lesson(db, lesson_id)
         result = []
@@ -121,8 +116,6 @@ class LessonService:
                 )
             )
         return result
-
-
 
     def submit_lesson(
         self,
@@ -158,11 +151,11 @@ class LessonService:
         user.total_xp += xp_earned
         user.hearts = submission.hearts_left
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         last_activity = user.last_activity_at
         if last_activity is not None:
             if last_activity.tzinfo is None:
-                last_activity = last_activity.replace(tzinfo=timezone.utc)
+                last_activity = last_activity.replace(tzinfo=UTC)
             delta = now - last_activity
             if delta.days == 0:
                 pass
