@@ -1,7 +1,7 @@
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
 from app.models.course import Course
-from app.models.lesson import Lesson
 from app.models.unit import Unit
 from app.models.user import User
 from app.models.user_lesson_progress import UserLessonProgress
@@ -33,14 +33,15 @@ class ClientProgressService:
     @staticmethod
     def _build_units(db: Session, course_id, completed_lesson_ids: set) -> list[UnitSummaryCompat]:
         units = db.exec(
-            select(Unit).where(Unit.course_id == course_id).order_by(Unit.order_index)
+            select(Unit)
+            .where(Unit.course_id == course_id)
+            .options(selectinload(Unit.lessons))
+            .order_by(Unit.order_index)
         ).all()
 
         unit_summaries: list[UnitSummaryCompat] = []
         for unit in units:
-            lessons = db.exec(
-                select(Lesson).where(Lesson.unit_id == unit.id).order_by(Lesson.order_index)
-            ).all()
+            lessons = sorted(unit.lessons, key=lambda item: item.order_index)
 
             lesson_summaries = [
                 LessonSummaryCompat(

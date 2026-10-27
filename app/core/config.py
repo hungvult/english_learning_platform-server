@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     ALLOWED_ORIGINS: str = "http://localhost:3000"
+    DEBUG: bool = False
 
     @property
     def cors_origins(self) -> list[str]:

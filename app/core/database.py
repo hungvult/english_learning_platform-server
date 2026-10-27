@@ -13,7 +13,9 @@ def _get_engine():
         settings = get_settings()
         _engine = create_engine(
             settings.DATABASE_URL,
-            echo=True,
+            echo=settings.DEBUG,
+            pool_pre_ping=True,
+            pool_recycle=3600,
         )
     return _engine
 

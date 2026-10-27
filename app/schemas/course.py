@@ -41,3 +41,14 @@ class UnitWithLessons(UnitRead):
 
 class CourseWithUnits(CourseRead):
     units: list[UnitWithLessons] = []
+
+
+class CourseClientResponse(BaseModel):
+    id: str
+    title: str
+    imageSrc: str
+
+
+class UserCoursesResponse(BaseModel):
+    activeCourseId: str | None = None
+    courses: list[CourseClientResponse]

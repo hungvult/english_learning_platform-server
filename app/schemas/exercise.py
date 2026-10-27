@@ -16,7 +16,7 @@ class ExerciseClient(BaseModel):
     id: uuid.UUID
     lesson_id: uuid.UUID
     type: str  # exercise type name
-    question_data: dict[str, Any] = {}
+    question_data: dict[str, Any] | None = None
     answer_data: dict[str, Any] = {}
 
     class Config:
@@ -33,7 +33,7 @@ class ExerciseRead(BaseModel):
     lesson_id: uuid.UUID
     exercise_type_id: uuid.UUID
     type: str  # resolved from exercise_type.name
-    question_data: dict[str, Any] = {}
+    question_data: dict[str, Any] | None = None
     answer_data: dict[str, Any] = {}
 
     class Config:

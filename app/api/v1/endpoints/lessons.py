@@ -34,25 +34,23 @@ def _get_active_lesson(db: Session, user: User) -> Lesson:
     completed_ids = set(completed)
 
     units = db.exec(
-        select(Unit).where(Unit.course_id == user.active_course_id).order_by(Unit.order_index)
+        select(Unit)
+        .where(Unit.course_id == user.active_course_id)
+        .options(selectinload(Unit.lessons))
+        .order_by(Unit.order_index)
     ).all()
 
+    last_lesson: Lesson | None = None
     for unit in units:
-        lessons = db.exec(
-            select(Lesson).where(Lesson.unit_id == unit.id).order_by(Lesson.order_index)
-        ).all()
+        lessons = sorted(unit.lessons, key=lambda item: item.order_index)
         for lesson in lessons:
             if lesson.id not in completed_ids:
                 return lesson
+            last_lesson = lesson
 
     # All completed — return the last lesson for practice
-    if units:
-        last_unit = units[-1]
-        last_lesson = db.exec(
-            select(Lesson).where(Lesson.unit_id == last_unit.id).order_by(Lesson.order_index.desc())
-        ).first()
-        if last_lesson:
-            return last_lesson
+    if last_lesson:
+        return last_lesson
 
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,

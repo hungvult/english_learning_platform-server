@@ -164,7 +164,7 @@ class SpeakSentenceAnswer(BaseModel):
 
 class SpeakSentenceExercise(BaseModel):
     type: Literal["SPEAK_SENTENCE"]
-    question_data: SpeakSentenceQuestion
+    question_data: None = None
     answer_data: SpeakSentenceAnswer
 
 

@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.models.exercise import Exercise
 from app.models.lesson import Lesson
@@ -79,7 +79,8 @@ class LessonService:
     def build_client_payload(self, lesson: Lesson) -> LessonPayload:
         """Convert ORM Lesson → LessonPayload with typed ExerciseClient items."""
         exercises: list[ExerciseClient] = []
-        for ex in lesson.exercises:
+        sorted_exercises = sorted(lesson.exercises, key=lambda ex: ex.order_index)
+        for ex in sorted_exercises:
             type_name = ex.exercise_type.name if ex.exercise_type else "UNKNOWN"
             exercises.append(
                 ExerciseClient(
@@ -124,8 +125,7 @@ class LessonService:
         lesson_id: uuid.UUID,
         submission: LessonSubmission,
     ) -> ProgressResponse:
-        """
-        Process a completed lesson submission:
+        """Process a completed lesson submission:
         1. Calculate XP from accuracy
         2. Update hearts from submission
         3. Update streak (SQL Server, no Redis)
@@ -140,28 +140,37 @@ class LessonService:
 
         total_answers = len(submission.answers)
         correct_answers = sum(1 for a in submission.answers if a.is_correct)
-        accuracy = correct_answers / total_answers if total_answers > 0 else 0.0
+        accuracy = (correct_answers / total_answers) if total_answers > 0 else 0.0
 
         xp_earned = 5
-        for threshold, xp in XP_TIERS:
-            if accuracy >= threshold:
-                xp_earned = xp
-                break
+        if total_answers > 0 and correct_answers == total_answers:
+            xp_earned = 20
+        else:
+            for threshold, xp in XP_TIERS:
+                if accuracy >= threshold:
+                    xp_earned = xp
+                    break
 
         user.total_xp += xp_earned
-        user.hearts = submission.hearts_left
+        user.hearts = max(0, submission.hearts_left)
+        if user.gems is None:
+            user.gems = 0
 
         now = datetime.now(UTC)
         last_activity = user.last_activity_at
         if last_activity is not None:
             if last_activity.tzinfo is None:
                 last_activity = last_activity.replace(tzinfo=UTC)
-            delta = now - last_activity
-            if delta.days == 0:
-                pass
-            elif delta.days == 1:
+            date_diff = (now.date() - last_activity.date()).days
+            if date_diff <= 0:
+                # Same calendar day (or clock skew) - streak unchanged
+                if user.current_streak == 0:
+                    user.current_streak = 1
+            elif date_diff == 1:
+                # Consecutive calendar day - increment streak
                 user.current_streak += 1
             else:
+                # Broken streak (> 1 calendar day) - reset to 1
                 user.current_streak = 1
         else:
             user.current_streak = 1
@@ -176,7 +185,7 @@ class LessonService:
                 user_id=user.id,
                 lesson_id=lesson_id,
                 exercise_id=answer.exercise_id,
-                user_answer=answer.user_answer,
+                user_answer=str(answer.user_answer),
                 is_correct=answer.is_correct,
                 created_at=now,
             )
@@ -185,11 +194,17 @@ class LessonService:
         if logs_to_add:
             db.add_all(logs_to_add)
 
-        progress = db.get(UserLessonProgress, (user.id, lesson_id))
+        progress = db.exec(
+            select(UserLessonProgress).where(
+                UserLessonProgress.user_id == user.id,
+                UserLessonProgress.lesson_id == lesson_id,
+            )
+        ).first()
         if progress:
             # Update existing record
             progress.score = max(progress.score, submission.score)
             progress.completed_at = now
+            db.add(progress)
         else:
             progress = UserLessonProgress(
                 user_id=user.id,

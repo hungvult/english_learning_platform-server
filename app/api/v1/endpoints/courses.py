@@ -1,29 +1,21 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
 from sqlmodel import Session
 
 from app.api.dependencies import require_authenticated_user
 from app.core.database import get_db
 from app.models.user import User
 from app.schemas.client_progress import UnitSummaryCompat
-from app.schemas.course import CourseRead, CourseWithUnits
+from app.schemas.course import (
+    CourseRead,
+    CourseWithUnits,
+    UserCoursesResponse,
+)
 from app.services.client_progress import client_progress_service
 from app.services.course import course_service
 
 router = APIRouter()
-
-
-class CourseClientResponse(BaseModel):
-    id: str
-    title: str
-    imageSrc: str
-
-
-class UserCoursesResponse(BaseModel):
-    activeCourseId: str | None = None
-    courses: list[CourseClientResponse]
 
 
 @router.get("/me", response_model=UserCoursesResponse)

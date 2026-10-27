@@ -11,7 +11,9 @@ class ExerciseRepository(BaseRepository[Exercise]):
         super().__init__(Exercise)
 
     def get_by_lesson(self, db: Session, lesson_id: uuid.UUID) -> list[Exercise]:
-        statement = select(Exercise).where(Exercise.lesson_id == lesson_id)
+        statement = (
+            select(Exercise).where(Exercise.lesson_id == lesson_id).order_by(Exercise.order_index)
+        )
         return db.exec(statement).all()
 
 

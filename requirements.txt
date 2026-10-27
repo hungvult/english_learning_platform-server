@@ -12,3 +12,5 @@ httpx
 python-multipart
 email-validator
 ruff
+pytest
+pytest-asyncio
